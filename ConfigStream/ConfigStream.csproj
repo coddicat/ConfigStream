@@ -1,0 +1,27 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <PackageId>ConfigStream</PackageId>
+    <Version>0.0.1-rc</Version>
+    <Authors>Rodion Shlomo Solomonyk</Authors>
+    <Company>Coddicat</Company>
+
+    <Description>
+      ConfigStream is a dynamic configuration management library for .NET, designed to facilitate consistent and flexible configuration handling across distributed microservices. 
+      Configurations can be stored and changed dynamically, enabling developers to easily manage settings for their applications. 
+      The library supports an optional scopeId (akin to correlationId) that ensures the consistency of configuration values from the start to the end of a single flow.
+      Tt's designed to be extensible, enabling configurations to be stored in various external sources. 
+      This makes ConfigStream particularly suitable for environments where settings need to be shared or can change dynamically at runtime, and consistency needs to be ensured.
+      ConfigStream provides a straightforward and efficient way to manage distributed configurations in a microservices architecture, improving maintainability and scalability.
+    </Description>
+
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ConfigStream.Abstractions\ConfigStream.Abstractions.csproj" />
+  </ItemGroup>
+
+</Project>
