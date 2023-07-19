@@ -2,6 +2,7 @@
 using ConfigStream.Admin.Redis.Models;
 using ConfigStream.Redis;
 using StackExchange.Redis;
+using System;
 using System.Text.Json;
 
 namespace ConfigStream.Admin.Redis
@@ -11,15 +12,20 @@ namespace ConfigStream.Admin.Redis
         Task CreateOrUpdateGroupAsync(ConfigGroup group);
         Task CreateOrUpdateTargetAsync(ConfigTarget target);
         Task CreateOrUpdateConfigAsync(Config config);
+        Task CreateOrUpdateEnvironmentAsync(ConfigEnvironment environment);
+        
         Task DeleteConfigAsync(string groupName, string configName);
         Task DeleteConfigGroupAsync(string groupName);
+        Task DeleteEnvironmentAsync(string environmentName);
+        Task DeleteTargetAsync(string targetName);
 
-        Task SetEnvironmentValueAsync(string environmentName, string groupName, string configName, string value, string targetName = null);
+        Task SetConfigValueAsync(SubmitConfigValue configValue);
 
-        Task<ConfigValue[]> GetValuesAsync(string environment, string search = null);
+        Task<ConfigValue[]> GetValuesAsync(string[] environments, string search = null);
         Task<ConfigGroup[]> GetGroupsAsync(string search = null);
         Task<Config[]> GetConfigsAsync(string search = null);
         Task<ConfigTarget[]> GetTargetsAsync(string search = null);
+        Task<ConfigEnvironment[]> GetEnvironmentsAsync(string search = null);        
     }
 
     public class AdminConfig : IAdminConfig
@@ -40,6 +46,16 @@ namespace ConfigStream.Admin.Redis
             ITransaction transaction = _database.CreateTransaction();
             transaction.SetAddAsync(RedisKeys.GroupKeys, groupName);
             transaction.StringSetAsync(RedisKeys.Group(groupName), new RedisValue(json));
+            return transaction.ExecuteAsync();
+        }
+        public Task CreateOrUpdateEnvironmentAsync(ConfigEnvironment environment)
+        {
+            string environmentName = environment.Name;
+            string json = JsonSerializer.Serialize(environment);
+
+            ITransaction transaction = _database.CreateTransaction();
+            transaction.SetAddAsync(RedisKeys.EnvironmentKeys, environmentName);
+            transaction.StringSetAsync(RedisKeys.Environment(environmentName), new RedisValue(json));
             return transaction.ExecuteAsync();
         }
         public Task CreateOrUpdateTargetAsync(ConfigTarget target)
@@ -64,13 +80,24 @@ namespace ConfigStream.Admin.Redis
             }            
             await StoreConfigInTransactionAsync(groupName, configName, config);
         }
-        public async Task SetEnvironmentValueAsync(string environmentName, string groupName, string configName, string value, string targetName = null)
+        
+        private async Task SetEnvironmentValueAsync(string groupName, string configName, string environmentName, string value)
         {
-            await CheckKeysExist(groupName, configName, targetName);
+            await CheckKeysExist(groupName, configName, environmentName/*, targetName*/);
             await CheckAllowedValues(groupName, configName, value);
-            RedisKey redisKey = RedisKeys.EnvironmentValue(environmentName, groupName, configName, targetName);
+            RedisKey redisKey = RedisKeys.EnvironmentValue(environmentName, groupName, configName/*, targetName*/);
             await _database.StringSetAsync(redisKey, value);
         }
+        public Task SetConfigValueAsync(SubmitConfigValue configValue)
+        {
+            List<Task> tasks = new List<Task>();
+            foreach (KeyValuePair<string, string> environmentValue in configValue.EnvironmentValues)
+            {
+                tasks.Add(SetEnvironmentValueAsync(configValue.GroupName, configValue.ConfigName, environmentValue.Key, environmentValue.Value));
+            }
+            return Task.WhenAll(tasks);
+        }
+        
         public async Task<ConfigGroup[]> GetGroupsAsync(string search = null)
         {
             RedisValue[] groupNames = await _database.SetMembersAsync(RedisKeys.GroupKeys);
@@ -88,9 +115,39 @@ namespace ConfigStream.Admin.Redis
 
             return groups;
         }
-        public Task<ConfigTarget[]> GetTargetsAsync(string search = null)
+        public async Task<ConfigTarget[]> GetTargetsAsync(string search = null)
         {
-            throw new NotImplementedException();
+            RedisValue[] targetNames = await _database.SetMembersAsync(RedisKeys.TargetKeys);
+            RedisKey[] redisKeys = targetNames
+                .Where(targetName => string.IsNullOrWhiteSpace(search) || ((string)targetName).Contains(search, StringComparison.InvariantCultureIgnoreCase))
+                .Select(targetName => RedisKeys.Target(targetName))
+                .Select(x => new RedisKey(x))
+                .ToArray();
+
+            RedisValue[] redisValues = await _database.StringGetAsync(redisKeys);
+
+            ConfigTarget[] targets = redisValues
+                .Select(x => JsonSerializer.Deserialize<ConfigTarget>(x))
+                .ToArray();
+
+            return targets;
+        }
+        public async Task<ConfigEnvironment[]> GetEnvironmentsAsync(string search = null)
+        {
+            RedisValue[] environmentNames = await _database.SetMembersAsync(RedisKeys.EnvironmentKeys);
+            RedisKey[] redisKeys = environmentNames
+                .Where(environmentName => string.IsNullOrWhiteSpace(search) || ((string)environmentName).Contains(search, StringComparison.InvariantCultureIgnoreCase))
+                .Select(environmentName => RedisKeys.Environment(environmentName))
+                .Select(x => new RedisKey(x))
+                .ToArray();
+
+            RedisValue[] redisValues = await _database.StringGetAsync(redisKeys);
+
+            ConfigEnvironment[] environments = redisValues
+                .Select(x => JsonSerializer.Deserialize<ConfigEnvironment>(x))
+                .ToArray();
+
+            return environments;
         }
         public async Task<Config[]> GetConfigsAsync(string search = null)
         {
@@ -104,6 +161,7 @@ namespace ConfigStream.Admin.Redis
 
             return allConfigs.ToArray();
         }
+        
         public async Task DeleteConfigAsync(string groupName, string configName)
         {
             string redisKey = RedisKeys.Config(groupName, configName);
@@ -116,37 +174,54 @@ namespace ConfigStream.Admin.Redis
         {
             await DeleteConfigGroupInTransactionAsync(groupName);
         }
-        public async Task<ConfigValue[]> GetValuesAsync(string environment, string search = null)
+        public async Task DeleteEnvironmentAsync(string environmentName)
+        {
+            await DeleteEnvironmentInTransactionAsync(environmentName);
+        }
+        public async Task DeleteTargetAsync(string targetName)
+        {
+            await DeleteTargetInTransactionAsync(targetName);
+        }
+
+        public async Task<ConfigValue[]> GetValuesAsync(string[] environments, string search = null)
         {
             RedisValue[] groupNames = await _database.SetMembersAsync(RedisKeys.GroupKeys);            
-            Dictionary<RedisKey, Config> configByKey = new Dictionary<RedisKey, Config>();
+            Dictionary<RedisKey, (Config config, string env)> configByKey = new Dictionary<RedisKey, (Config config, string env)>();
             foreach (string groupName in groupNames)
             {                
                 Config[] configs = await GetConfigsByGroupAsync(groupName);
-                var dic = configs.ToDictionary(
-                    config => new RedisKey(RedisKeys.EnvironmentValue(environment, groupName, config.Name)),
-                    config => config);
+                Dictionary<RedisKey, (Config config, string env)> dic =
+                    configs.SelectMany(config => environments.Select(environmentName => new
+                    {
+                        Environment = environmentName,
+                        ConfigName = config.Name,
+                        Config = config
+                    })).ToDictionary(
+                    x => new RedisKey(RedisKeys.EnvironmentValue(x.Environment, groupName, x.ConfigName)),
+                    x => (x.Config, x.Environment));
 
                 configByKey = configByKey.Union(dic).ToDictionary(x => x.Key, x => x.Value);
             }
 
             RedisKey[] redisKeys = configByKey.Keys.ToArray();
             RedisValue[] redisValues = await _database.StringGetAsync(redisKeys);
-            
-            List<ConfigValue> result = new List<ConfigValue>();
-            for (int i = 0; i < redisKeys.Length; i++)
-            {
-                RedisKey key = redisKeys[i];
-                result.Add(new ConfigValue
-                {
-                    GroupName = configByKey[key].GroupName,
-                    ConfigName = configByKey[key].Name,
-                    DefaultValue = configByKey[key].DefaultValue,
-                    Value = redisValues[i],
-                });
-            }
 
-            return result.ToArray();
+            var result = redisKeys.Select((key, i) => new
+                {
+                    config = configByKey[key],
+                    value = redisValues[i],
+                }).GroupBy(x => x.config.config)
+                .Select(x => new ConfigValue
+                {
+                    ConfigName = x.Key.Name,
+                    GroupName = x.Key.GroupName,
+                    DefaultValue = x.Key.DefaultValue,
+                    AllowedValues = x.Key.AllowedValues,
+                    EnvironmentValues = x.ToDictionary(y => y.config.env, y => (string)y.value)
+                })
+                .ToArray();
+
+            return result;
         }
         #endregion
 
@@ -165,6 +240,20 @@ namespace ConfigStream.Admin.Redis
             transaction.KeyDeleteAsync(RedisKeys.Group(groupName));
             return transaction.ExecuteAsync();
         }
+        private Task DeleteEnvironmentInTransactionAsync(string environmentName)
+        {
+            ITransaction transaction = _database.CreateTransaction();
+            transaction.SetRemoveAsync(RedisKeys.EnvironmentKeys, environmentName);
+            transaction.KeyDeleteAsync(RedisKeys.Environment(environmentName));
+            return transaction.ExecuteAsync();
+        }
+        private Task DeleteTargetInTransactionAsync(string targetName)
+        {
+            ITransaction transaction = _database.CreateTransaction();
+            transaction.SetRemoveAsync(RedisKeys.TargetKeys, targetName);
+            transaction.KeyDeleteAsync(RedisKeys.Target(targetName));
+            return transaction.ExecuteAsync();
+        }
         private Task StoreConfigInTransactionAsync(string groupName, string configName, Config config)
         {
             string json = JsonSerializer.Serialize(config);
@@ -174,13 +263,20 @@ namespace ConfigStream.Admin.Redis
             transaction.StringSetAsync(RedisKeys.Config(groupName, configName), new RedisValue(json));
             return transaction.ExecuteAsync();
         }
-        private async Task CheckKeysExist(string groupName, string configName, string targetName)
+        private async Task CheckKeysExist(string groupName, string configName, string environmentName, string targetName = null)
         {
-            var configExists = await _database.SetContainsAsync(RedisKeys.ConfigKeys(groupName), configName);
+            bool configExists = await _database.SetContainsAsync(RedisKeys.ConfigKeys(groupName), configName);
             if (!configExists)
             {
                 throw new Exception($"Config {groupName}:{configName} doesn't exist");
             }
+
+            bool environmentExists = await _database.SetContainsAsync(RedisKeys.EnvironmentKeys, environmentName);
+            if (!environmentExists)
+            {
+                throw new Exception($"Environment {environmentName} doesn't exist");
+            }
+
             if (targetName is not null)
             {
                 var targetExists = await _database.SetContainsAsync(RedisKeys.TargetKeys, targetName);

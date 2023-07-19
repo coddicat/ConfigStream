@@ -1,7 +1,7 @@
 <template>
-  <v-dialog v-model="model" width="600" class="groups-dialog">
+  <v-dialog v-model="model" width="600" class="environments-dialog">
     <v-card>
-      <v-card-title>Config Groups</v-card-title>
+      <v-card-title>Config Environments</v-card-title>
       <v-form ref="form" @submit="preventSubmit">
         <v-card-actions>
           <v-btn
@@ -11,12 +11,12 @@
             variant="flat"
           ></v-btn>
           <v-btn
-            @click="onNewGroup"
+            @click="onNewEnvironment"
             variant="outlined"
             color="primary"
             prepend-icon="mdi-plus"
           >
-            New group
+            New environment
           </v-btn>
           <v-spacer></v-spacer>
           <v-text-field
@@ -36,19 +36,20 @@
       <v-card
         :loading="loading"
         :disabled="loading"
-        class="mx-2 groups-dialog__list"
+        class="mx-2 environments-dialog__list"
         variant="outlined"
         height="350"
       >
         <v-list v-if="items?.length > 0" density="compact">
-          <group-list-item
+          <environment-list-item
             :model-value="item"
             v-for="item in items"
             :key="item.name"
-          ></group-list-item>
+          ></environment-list-item>
         </v-list>
         <v-card-text v-else>
-          Group list is empty. Click 'New Group' button to add a new group
+          Environment list is empty. Click 'New Environment' button to add a new
+          environment
         </v-card-text>
       </v-card>
       <v-card-actions>
@@ -61,16 +62,16 @@
 
 <script setup lang="ts">
 import { computed, watch, ref } from 'vue';
-import { useConfigGroupStore } from '@/store/config-group';
+import { useConfigEnvironmentStore } from '@/store/config-environment';
 import { storeToRefs } from 'pinia';
-import GroupListItem from './group-list-item.vue';
+import EnvironmentListItem from './environment-list-item.vue';
 import { promptDialog } from '@/utils/dialog';
 import { debounce } from 'lodash';
 import { redisKeyRule, requiredRule } from '@/input-rules';
 
-const store = useConfigGroupStore();
+const store = useConfigEnvironmentStore();
 const { items, loading, search } = storeToRefs(store);
-const { requestConfigGroups, createConfigGroup } = store;
+const { requestConfigEnvironments, createConfigEnvironment } = store;
 const form = ref<HTMLFormElement>();
 
 const props = defineProps<{
@@ -94,11 +95,15 @@ function preventSubmit(e: Event) {
   e.preventDefault();
 }
 
-async function onNewGroup() {
+async function onNewEnvironment() {
   const rules = [requiredRule, redisKeyRule];
-  const result = await promptDialog('Enter group name:', undefined, rules);
+  const result = await promptDialog(
+    'Enter environment name:',
+    undefined,
+    rules
+  );
   if (result) {
-    createConfigGroup({
+    createConfigEnvironment({
       name: result
     });
   }
@@ -106,7 +111,7 @@ async function onNewGroup() {
 
 function onRefresh() {
   if (props.modelValue) {
-    return requestConfigGroups();
+    return requestConfigEnvironments();
   }
 }
 
@@ -116,7 +121,7 @@ watch(
   () => props.modelValue,
   async val => {
     if (val) {
-      await requestConfigGroups();
+      await requestConfigEnvironments();
     } else {
       form.value?.reset();
     }
@@ -125,8 +130,8 @@ watch(
 </script>
 
 <style>
-.groups-dialog {
-  .groups-dialog__list {
+.environments-dialog {
+  .environments-dialog__list {
     overflow-y: auto;
   }
 }

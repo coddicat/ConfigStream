@@ -8,7 +8,7 @@
     <v-card :loading="loading" :disabled="loading">
       <v-card-title>{{ title }}</v-card-title>
       <v-card-text>
-        <v-form ref="form">
+        <v-form ref="form" @submit="onSubmit">
           <slot></slot>
         </v-form>
       </v-card-text>
@@ -17,7 +17,7 @@
         <v-btn color="default" @click="onCancel">
           {{ cancelText ?? 'Cancel' }}
         </v-btn>
-        <v-btn color="primary" @click="onSave">
+        <v-btn color="primary" @click="onSubmit">
           {{ saveText ?? 'Save' }}
         </v-btn>
       </v-card-actions>
@@ -46,7 +46,9 @@ const emit = defineEmits<{
   (event: 'save'): void;
 }>();
 const form = ref<HTMLFormElement>();
-async function onSave() {
+async function onSubmit(e: Event) {
+  e.preventDefault();
+
   if (!form.value) {
     return;
   }

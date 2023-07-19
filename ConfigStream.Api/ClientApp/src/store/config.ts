@@ -1,12 +1,11 @@
 import { createOrUpdateConfig, deleteConfig, getConfigs } from '@/api/config';
-import { createConfigGroup } from '@/api/config-group';
 import { defineStore } from 'pinia';
 import { DebouncedFunc, debounce } from 'lodash';
 import { SortItem } from '@/type';
 
 export type Config = {
-  name: string;
-  groupName: string;
+  name?: string;
+  groupName?: string;
   description?: string;
   allowedValues?: string[];
   defaultValue?: string;
@@ -94,14 +93,9 @@ export const useConfigStore = defineStore('config', {
     closeDialog() {
       this.formDialog.open = false;
     },
-    async createOrUpdateConfig(config: Config, createGroup: boolean) {
+    async createOrUpdateConfig(config: Config) {
       try {
         this.formDialog.loading = true;
-        if (createGroup) {
-          await createConfigGroup({
-            name: config.groupName
-          });
-        }
         await createOrUpdateConfig(config);
         this.formDialog.open = false;
         this.requestConfigList();

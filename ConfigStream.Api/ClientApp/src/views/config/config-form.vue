@@ -6,30 +6,22 @@
     :loading="formDialog.loading"
     @save="onSave"
   >
-    <v-combobox
+    <v-select
       v-model="data.groupName"
       :items="groupItems"
       item-title="name"
       item-value="name"
       density="compact"
       variant="outlined"
-      clearable
-      label="Group*"
+      label="Group"
       :rules="fieldRules.groupName"
       :loading="groupLoading"
       :disabled="groupLoading"
     >
-      <template v-slot:append v-if="newGroup">
-        <v-tooltip text="New group name will be added">
-          <template v-slot:activator="{ props }">
-            <v-icon v-bind="props" color="warning">mdi-alert-circle</v-icon>
-          </template>
-        </v-tooltip>
-      </template>
-    </v-combobox>
+    </v-select>
     <v-text-field
       v-model="data.name"
-      label="Name*"
+      label="Name"
       density="compact"
       variant="outlined"
       :rules="fieldRules.configName"
@@ -70,8 +62,8 @@ import { redisKeyRule, requiredRule } from '@/input-rules';
 
 const data = reactive<Config>({
   allowedValues: [],
-  groupName: '',
-  name: ''
+  groupName: undefined,
+  name: undefined
 });
 const configStore = useConfigStore();
 const configGroupStore = useConfigGroupStore();
@@ -89,21 +81,12 @@ const dialog = computed({
     }
   }
 });
-
-const newGroup = computed(() => {
-  if ((data.groupName?.trim() ?? '').length === 0) {
-    return false;
-  }
-  const exists = groupItems.value.find(x => x === data.groupName.trim());
-  return !exists;
-});
-
 const fieldRules = {
   configName: [requiredRule, redisKeyRule],
   groupName: [requiredRule, redisKeyRule]
 };
 async function onSave() {
-  configStore.createOrUpdateConfig(data, newGroup.value);
+  configStore.createOrUpdateConfig(data);
 }
 
 watch(

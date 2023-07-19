@@ -1,5 +1,6 @@
 using ConfigStream.Admin.Redis;
 using ConfigStream.Admin.Redis.Entities;
+using ConfigStream.Admin.Redis.Models;
 using ConfigStream.Builder;
 using ConfigStream.Pipeline;
 using ConfigStream.Redis;
@@ -79,15 +80,24 @@ if (app.Environment.IsDevelopment())
 app.UseCors("AllowSpecificOrigin");
 app.UseHttpsRedirection();
 
-app.MapGet("config-stream/group", (IAdminConfig adminConfig, string search) => adminConfig.GetGroupsAsync(search));
+app.MapGet("config-stream/group", (IAdminConfig adminConfig, string? search) => adminConfig.GetGroupsAsync(search));
 app.MapPut("config-stream/group", (IAdminConfig adminConfig, ConfigGroup group) => adminConfig.CreateOrUpdateGroupAsync(group));
 app.MapDelete("config-stream/group/{groupName}", (IAdminConfig adminConfig, string groupName) => adminConfig.DeleteConfigGroupAsync(groupName));
 
-app.MapGet("config-stream/config", (IAdminConfig adminConfig, string search) => adminConfig.GetConfigsAsync(search));
+app.MapGet("config-stream/environment", (IAdminConfig adminConfig, string? search) => adminConfig.GetEnvironmentsAsync(search));
+app.MapPut("config-stream/environment", (IAdminConfig adminConfig, ConfigEnvironment environment) => adminConfig.CreateOrUpdateEnvironmentAsync(environment));
+app.MapDelete("config-stream/environment/{environmentName}", (IAdminConfig adminConfig, string environmentName) => adminConfig.DeleteEnvironmentAsync(environmentName));
+
+app.MapGet("config-stream/target", (IAdminConfig adminConfig, string? search) => adminConfig.GetTargetsAsync(search));
+app.MapPut("config-stream/target", (IAdminConfig adminConfig, ConfigTarget target) => adminConfig.CreateOrUpdateTargetAsync(target));
+app.MapDelete("config-stream/target/{targetName}", (IAdminConfig adminConfig, string targetName) => adminConfig.DeleteTargetAsync(targetName));
+
+app.MapGet("config-stream/config", (IAdminConfig adminConfig, string? search) => adminConfig.GetConfigsAsync(search));
 app.MapPut("config-stream/config", (IAdminConfig adminConfig, Config config) => adminConfig.CreateOrUpdateConfigAsync(config));
 app.MapDelete("config-stream/config/{groupName}/{configName}", (IAdminConfig adminConfig, string groupName, string configName) => adminConfig.DeleteConfigAsync(groupName, configName));
 
-app.MapGet("config-stream/value", (IAdminConfig adminConfig, string environment, string search) => adminConfig.GetValuesAsync(environment, search));
+app.MapGet("config-stream/value", (IAdminConfig adminConfig, string[] environments, string? search) => adminConfig.GetValuesAsync(environments, search));
+app.MapPut("config-stream/value", (IAdminConfig adminConfig, SubmitConfigValue configValue) => adminConfig.SetConfigValueAsync(configValue));
 
 app.Run();
 

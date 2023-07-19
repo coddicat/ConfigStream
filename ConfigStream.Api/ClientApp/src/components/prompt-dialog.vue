@@ -4,8 +4,9 @@
       <v-card-title v-if="model?.title">{{ model?.title }}</v-card-title>
       <v-card-text>
         <div>{{ model?.message }}</div>
-        <v-form v-model="isValid" ref="form">
+        <v-form v-model="isValid" ref="form" @submit="onSubmit">
           <v-text-field
+            ref="inputField"
             variant="outlined"
             density="compact"
             v-model="input"
@@ -26,11 +27,13 @@
 <script setup lang="ts">
 import { useDialogStore } from '@/store/dialog';
 import { watch, ref, computed } from 'vue';
+
 const form = ref<HTMLFormElement>();
-const isValid = ref();
+const isValid = ref<boolean>();
 const store = useDialogStore();
 const model = computed(() => store.promptDialog);
-const input = ref('');
+const input = ref<string>();
+const inputField = ref<HTMLInputElement>();
 const dialog = computed({
   get: () => model.value?.dialog ?? false,
   set: (v: boolean) => {
@@ -39,7 +42,10 @@ const dialog = computed({
     }
   }
 });
-async function onSubmit() {
+
+async function onSubmit(e: Event) {
+  e.preventDefault();
+
   await form.value?.validate();
   if (!isValid.value) {
     return;
@@ -48,14 +54,20 @@ async function onSubmit() {
   model.value?.resolve(input.value);
   dialog.value = false;
 }
+
 function onCancel() {
   model.value?.resolve(undefined);
   dialog.value = false;
 }
+
 watch(
   () => dialog.value,
   val => {
-    if (!val) {
+    if (val) {
+      setTimeout(() => {
+        inputField.value?.focus();
+      }, 300);
+    } else {
       form.value?.reset();
     }
   }

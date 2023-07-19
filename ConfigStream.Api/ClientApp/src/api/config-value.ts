@@ -1,21 +1,19 @@
-import { ConfigValue } from '@/store/config-value';
+import { ConfigValue, SubmitConfigValue } from '@/store/config-value';
 import { instance } from './instance';
 
-export async function getConfigValues(search?: string) {
-  const environment = 'Development';
+export async function getConfigValues(environments: string[], search?: string) {
   const response = await instance.get<ConfigValue[]>('/value', {
     params: {
-      environment,
+      environments,
       search
+    },
+    paramsSerializer: {
+      indexes: null
     }
   });
   return response.data;
 }
 
-// export function createOrUpdateConfig(config: Config) {
-//   return instance.put('/config', config);
-// }
-
-// export function deleteConfig(config: Config) {
-//   return instance.delete(`/config/${config.groupName}/${config.name}`);
-// }
+export function submitConfigValue(configValue: SubmitConfigValue) {
+  return instance.put('/value', configValue);
+}

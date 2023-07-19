@@ -17,17 +17,26 @@
     <template v-slot:top>
       <ConfigListHeader></ConfigListHeader>
     </template>
+    <template v-slot:item.defaultValue="{ item }">
+      <ConfigValueChip
+        :model-value="item.raw.defaultValue"
+        color="secondary"
+      ></ConfigValueChip>
+    </template>
     <template v-slot:item.allowedValues="{ item }">
-      <div class="d-flex" style="gap: 4px">
-        <v-chip
+      <div
+        v-if="item.raw.allowedValues?.length > 0"
+        class="d-flex"
+        style="gap: 4px"
+      >
+        <ConfigValueChip
           v-for="(allowedValue, $index) in item.raw.allowedValues"
           :key="$index"
+          :model-value="allowedValue"
           color="primary"
-          density="comfortable"
-        >
-          {{ allowedValue }}</v-chip
-        >
+        ></ConfigValueChip>
       </div>
+      <span v-else> - </span>
     </template>
     <template v-slot:item.actions="{ item }">
       <v-btn
@@ -55,6 +64,8 @@ import { storeToRefs } from 'pinia';
 import { confirmDialog } from '@/utils/dialog';
 import ConfigListHeader from './config-list-header.vue';
 import { TableHeader } from '@/type';
+import ConfigValueChip from '@/components/config-value-chip.vue';
+
 const store = useConfigStore();
 const { items, itemsPerPage, loading, total, sortBy } = storeToRefs(store);
 const { updateItemsPerPage, updatePage } = store;
