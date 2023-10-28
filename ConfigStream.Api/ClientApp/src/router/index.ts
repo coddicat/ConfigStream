@@ -27,7 +27,7 @@ const routes = [
         name: 'Targets',
         component: () =>
           import(
-            /* webpackChunkName: "Target" */ '@/views/target/targets-view.vue'
+            /* webpackChunkName: "targets-view" */ '@/views/target/targets-view.vue'
           )
       }
     ]

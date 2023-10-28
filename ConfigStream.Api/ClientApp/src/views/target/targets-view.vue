@@ -1,6 +1,6 @@
 <template>
   <v-card flat>
-    Hello Targets
+    Targets values
     <!-- <ConfigList></ConfigList>
         <ConfigForm></ConfigForm> -->
   </v-card>

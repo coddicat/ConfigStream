@@ -17,7 +17,9 @@
         <v-list-item prepend-icon="mdi-cogs" :to="{ name: 'Configs' }">
           Configs
         </v-list-item>
-        <v-list-item prepend-icon="mdi-target">Targets</v-list-item>
+        <v-list-item prepend-icon="mdi-target" :to="{ name: 'Targets' }">
+          Targets
+        </v-list-item>
       </v-list>
 
       <v-divider></v-divider>
@@ -36,25 +38,35 @@
             <v-icon size="small">mdi-open-in-new</v-icon>
           </template>
         </v-list-item>
+
+        <v-list-item prepend-icon="mdi-group" @click="openTargets">
+          Targets
+          <template v-slot:append>
+            <v-icon size="small">mdi-target</v-icon>
+          </template>
+        </v-list-item>
       </v-list>
     </v-navigation-drawer>
-    <RouterView></RouterView>
+    <router-view></router-view>
     <groups-dialog v-model="data.groupListDialog"></groups-dialog>
     <environments-dialog
       v-model="data.environmentListDialog"
     ></environments-dialog>
+    <targets-dialog v-model="data.targetListDialog"></targets-dialog>
   </v-main>
 </template>
 
 <script lang="ts" setup>
 import groupsDialog from '@/views/group/groups-dialog.vue';
 import environmentsDialog from '@/views/environment/environments-dialog.vue';
+import targetsDialog from '@/views/target/targets-dialog.vue';
 import { reactive } from 'vue';
 
 const data = reactive({
   rail: false,
   groupListDialog: false,
-  environmentListDialog: false
+  environmentListDialog: false,
+  targetListDialog: false
 });
 
 function switchRail() {
@@ -65,5 +77,8 @@ function openGroups() {
 }
 function openEnvironments() {
   data.environmentListDialog = true;
+}
+function openTargets() {
+  data.targetListDialog = true;
 }
 </script>
