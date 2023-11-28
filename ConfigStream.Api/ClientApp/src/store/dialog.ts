@@ -14,7 +14,7 @@ export type PromptDialog = {
   title?: string;
   message: string;
   dialog: boolean;
-  rules?: ((value?: string) => string | boolean)[];
+  validate?: (value?: string) => string | boolean;
 };
 
 type Store = {

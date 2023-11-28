@@ -15,7 +15,7 @@ namespace ConfigStream.Redis
         }
         public async Task HandleAsync(IHandlerContext context, HandlerDelegate next)
         {
-            RedisKey envRedisKey = RedisKeys.EnvironmentValue(context.EnvironmentName, context.GroupName, context.ConfigName, context.TargetName);
+            RedisKey envRedisKey = RedisKeys.EnvironmentTargetValue(context.EnvironmentName, context.GroupName, context.ConfigName, context.TargetName);
             if (!context.Value.IsSuccess)
             {
                 await TryReadFromRedisAsync(envRedisKey, context);

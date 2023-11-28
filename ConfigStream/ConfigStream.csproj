@@ -5,7 +5,7 @@
     <PackageId>ConfigStream</PackageId>
     <Version>0.0.1-rc</Version>
     <Authors>Rodion Shlomo Solomonyk</Authors>
-    <Company>Coddicat</Company>
+    <Company>Coddicat</Company>    
 
     <Description>
       ConfigStream is a dynamic configuration management library for .NET, designed to facilitate consistent and flexible configuration handling across distributed microservices. 

@@ -1,9 +1,9 @@
-import { Config } from '@/store/config';
+import { type Config } from '@/store/config';
 import { instance } from './instance';
 
-export async function getConfigs(search?: string) {
+export async function getConfigs(/*search?: string*/) {
   const response = await instance.get<Config[]>('/config', {
-    params: { search }
+    //params: { search }
   });
   return response.data;
 }

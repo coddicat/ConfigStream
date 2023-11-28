@@ -1,12 +1,14 @@
-<template>
-  <v-chip v-if="modelValue" :color="color" density="comfortable">
-    {{ modelValue }}
-  </v-chip>
-  <span v-else>-</span>
-</template>
 <script setup lang="ts">
-defineProps<{
-  modelValue?: string;
-  color: string;
+import { computed } from 'vue';
+const props = defineProps<{
+  label: string | null | undefined;
 }>();
+const isPrimaryValue = computed(() =>
+  ['enable', 'enabled', 'on', 'true', 'yes'].includes(
+    props.label?.toLowerCase()
+  )
+);
 </script>
+<template>
+  <Chip :label="props.label" :class="{ 'bg-primary': isPrimaryValue }" />
+</template>

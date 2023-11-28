@@ -1,7 +1,6 @@
 import { createOrUpdateConfig, deleteConfig, getConfigs } from '@/api/config';
 import { defineStore } from 'pinia';
-import { DebouncedFunc, debounce } from 'lodash';
-import { SortItem } from '@/type';
+import { type DebouncedFunc, debounce } from 'lodash';
 
 export type Config = {
   name?: string;
@@ -10,23 +9,18 @@ export type Config = {
   allowedValues?: string[];
   defaultValue?: string;
 };
-export type ConfigFormDialog = {
-  open: boolean;
-  loading: boolean;
-  config?: Config;
-  new?: boolean;
-};
+// export type ConfigFormDialog = {
+//   open: boolean;
+//   loading: boolean;
+//   config?: Config;
+//   new?: boolean;
+// };
 
 type Store = {
   items: Config[];
-  total: number;
-  page: number;
-  itemsPerPage: number;
   loading: boolean;
-  search?: string;
-  sortBy?: SortItem;
-
-  formDialog: ConfigFormDialog;
+  // search?: string;
+  // formDialog: ConfigFormDialog;
 };
 
 let debouncedRequestConfigList: undefined | DebouncedFunc<() => Promise<void>>;
@@ -34,16 +28,12 @@ let debouncedRequestConfigList: undefined | DebouncedFunc<() => Promise<void>>;
 export const useConfigStore = defineStore('config', {
   state: (): Store => ({
     items: [],
-    total: 0,
-    page: 1,
-    itemsPerPage: 10,
-    loading: false,
-    formDialog: {
-      open: false,
-      loading: false
-    },
-    search: undefined,
-    sortBy: undefined
+    loading: false
+    // formDialog: {
+    //   open: false,
+    //   loading: false
+    // },
+    // search: undefined
   }),
   actions: {
     debouncedRequestConfigList() {
@@ -55,54 +45,45 @@ export const useConfigStore = defineStore('config', {
     async requestConfigList() {
       try {
         this.loading = true;
-        const items = await getConfigs(this.search);
+        const items = await getConfigs(/*this.search*/);
         this.items = items;
-        this.total = items.length;
       } catch (error) {
         console.error(error);
       } finally {
         this.loading = false;
       }
     },
-    updateItemsPerPage(v: number) {
-      this.itemsPerPage = v;
-      this.debouncedRequestConfigList();
-    },
-    updatePage(v: number) {
-      this.page = v;
-      this.debouncedRequestConfigList();
-    },
-    updateSearch(v?: string) {
-      this.search = v;
-      this.debouncedRequestConfigList();
-    },
-    openEditConfigDialog(config: Config) {
-      this.formDialog = {
-        config,
-        open: true,
-        loading: false
-      };
-    },
-    openCreateConfigDialog() {
-      this.formDialog = {
-        new: true,
-        open: true,
-        loading: false
-      };
-    },
-    closeDialog() {
-      this.formDialog.open = false;
-    },
+    // updateSearch(v?: string) {
+    //   this.search = v;
+    //   this.debouncedRequestConfigList();
+    // },
+    // openEditConfigDialog(config: Config) {
+    //   this.formDialog = {
+    //     config,
+    //     open: true,
+    //     loading: false
+    //   };
+    // },
+    // openCreateConfigDialog() {
+    //   this.formDialog = {
+    //     new: true,
+    //     open: true,
+    //     loading: false
+    //   };
+    // },
+    // closeDialog() {
+    //   this.formDialog.open = false;
+    // },
     async createOrUpdateConfig(config: Config) {
       try {
-        this.formDialog.loading = true;
+        // this.formDialog.loading = true;
         await createOrUpdateConfig(config);
-        this.formDialog.open = false;
+        // this.formDialog.open = false;
         this.requestConfigList();
       } catch (error) {
         console.error(error);
       } finally {
-        this.formDialog.loading = false;
+        // this.formDialog.loading = false;
       }
     },
     async deleteConfig(config: Config) {

@@ -1,12 +1,13 @@
-import { ConfigValue, SubmitConfigValue } from '@/store/config-value';
+import { type ConfigValue } from '@/store/config-value';
 import { instance } from './instance';
 
-export async function getConfigValues(environments: string[], search?: string) {
+export async function getConfigValues(/*search?: string*/): Promise<
+  ConfigValue[]
+> {
   const response = await instance.get<ConfigValue[]>('/value', {
-    params: {
-      environments,
-      search
-    },
+    // params: {
+    //   search
+    // },
     paramsSerializer: {
       indexes: null
     }
@@ -14,6 +15,6 @@ export async function getConfigValues(environments: string[], search?: string) {
   return response.data;
 }
 
-export function submitConfigValue(configValue: SubmitConfigValue) {
-  return instance.put('/value', configValue);
+export function submitConfigValues(configValues: ConfigValue[]): Promise<void> {
+  return instance.put('/value', configValues);
 }
