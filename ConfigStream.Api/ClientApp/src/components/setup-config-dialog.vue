@@ -51,7 +51,7 @@ import { watch } from 'vue';
 import { useField, useForm } from 'vee-validate';
 import { isValidRedisKey } from '@/utils/redisKey';
 import InputField from './input-field.vue';
-import { Config } from '@/store/config';
+import { type Config } from '@/store/config';
 
 const { handleSubmit, resetForm, errors, meta } = useForm();
 const { value: groupName } = useField<string>('groupName', validateKey);

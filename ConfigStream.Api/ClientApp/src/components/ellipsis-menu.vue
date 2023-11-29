@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import { MenuItem } from 'primevue/menuitem';
+import { type MenuItem } from 'primevue/menuitem';
 defineProps<{
   items: MenuItem[];
   disabled: boolean;

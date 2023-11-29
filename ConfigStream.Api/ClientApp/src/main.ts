@@ -3,12 +3,6 @@ import 'primevue/resources/themes/viva-dark/theme.css';
 import 'primeicons/primeicons.css';
 import 'primeflex/primeflex.css';
 
-import { createApp } from 'vue';
-import { createPinia } from 'pinia';
-
-import App from './app.vue';
-import router from './router';
-
 import PrimeVue from 'primevue/config';
 import Button from 'primevue/button';
 import Card from 'primevue/card';
@@ -23,7 +17,12 @@ import Toolbar from 'primevue/toolbar';
 import Dialog from 'primevue/dialog';
 import TieredMenu from 'primevue/tieredmenu';
 
+import { createApp } from 'vue';
+import { createPinia } from 'pinia';
+import App from './app.vue';
+import router from './router';
 const app = createApp(App);
+
 app.component('Button', Button);
 app.component('Card', Card);
 app.component('TreeTable', TreeTable);
@@ -36,8 +35,8 @@ app.component('Dropdown', Dropdown);
 app.component('Toolbar', Toolbar);
 app.component('Dialog', Dialog);
 app.component('TieredMenu', TieredMenu);
-
 app.use(PrimeVue);
+
 app.use(createPinia());
 app.use(router);
 app.mount('#app');

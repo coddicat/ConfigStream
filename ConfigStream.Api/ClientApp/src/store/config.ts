@@ -3,8 +3,8 @@ import { defineStore } from 'pinia';
 import { type DebouncedFunc, debounce } from 'lodash';
 
 export type Config = {
-  name?: string;
-  groupName?: string;
+  name: string;
+  groupName: string;
   description?: string;
   allowedValues?: string[];
   defaultValue?: string;

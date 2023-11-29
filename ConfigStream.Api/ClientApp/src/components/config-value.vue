@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { ConfigValue } from '@/store/config-value';
-import { Config } from '@/store/config';
+import { type ConfigValue } from '@/store/config-value';
+import { type Config } from '@/store/config';
 import ConfigValueChip from './config-value-chip.vue';
 const props = defineProps<{
   configValue: ConfigValue;
@@ -14,7 +14,7 @@ const allowedValues = computed(() => props.config.allowedValues);
 const _configValue = computed(() => props.configValue);
 const model = computed({
   get: () => _configValue.value.value,
-  set: (v: string) => (_configValue.value.value = v)
+  set: (v: string | undefined) => (_configValue.value.value = v)
 });
 </script>
 
@@ -22,7 +22,7 @@ const model = computed({
   <template v-if="edit">
     <div class="flex flex-row gap-2 align-items-center">
       <Dropdown
-        v-if="allowedValues?.length > 0"
+        v-if="!!allowedValues && allowedValues.length > 0"
         v-model="model"
         :options="allowedValues"
         :disabled="disabled"

@@ -5,7 +5,7 @@ defineProps<{
   error?: string | boolean;
 }>();
 defineEmits<{
-  (event: 'update:modelValue', value: boolean): void;
+  (event: 'update:modelValue', value: string): void;
 }>();
 </script>
 <template>
@@ -14,7 +14,7 @@ defineEmits<{
       <InputText
         type="text"
         :model-value="modelValue"
-        @update:model-value="v => $emit('update:modelValue', v)"
+        @update:model-value="(v: string) => $emit('update:modelValue', v)"
         :class="{ 'p-invalid': error }"
       />
       <label>{{ label }}</label>
