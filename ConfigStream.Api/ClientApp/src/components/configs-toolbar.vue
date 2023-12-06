@@ -1,61 +1,42 @@
 <script setup lang="ts">
-import { type Config, useConfigStore } from '@/store/config';
-import { type ConfigValue } from '@/store/config-value';
 import { promptDialog } from '@/utils/dialog';
-import { computed, ref } from 'vue';
-import SetupConfigDialog from './setup-config-dialog.vue';
-const { createOrUpdateConfig } = useConfigStore();
+import { computed } from 'vue';
+import { storeToRefs } from 'pinia';
+import { useHomeStore } from '@/store/home';
+const homeStore = useHomeStore();
+const { sortedEnvironments, sortedSelectedEnvironments, disabledEnvironments } =
+  storeToRefs(homeStore);
+const { addEnvironment, openSetupConfigDialog } = homeStore;
 
-const emits = defineEmits<{
-  (event: 'expand', configGroup: string): void;
-  (event: 'update:selectedEnvironments', environments: string[]): void;
-}>();
-
-const props = defineProps<{
-  environments: string[];
-  selectedEnvironments: string[];
-  configValues: ConfigValue[];
-  configs: Config[];
-}>();
-
-const _selectedEnvironments = computed({
-  get: () => props.selectedEnvironments,
-  set: (v: string[]) => emits('update:selectedEnvironments', v)
-});
-const _configValues = computed(() => props.configValues);
-const setupConfig = ref(false);
-
-async function addEnvironment() {
+async function onAddEnvironment() {
   const res = await promptDialog(
     'Enter a new environment name',
     'Adding a new environment'
   );
   if (!res) return;
-  _configValues.value.push({
-    configName: props.configs[0].name,
-    groupName: props.configs[0].groupName,
-    environmentName: res
-  });
-  _selectedEnvironments.value = [..._selectedEnvironments.value, res];
+  addEnvironment(res);
 }
 
-async function onSubmitSetupConfig(config: Config) {
-  await createOrUpdateConfig(config);
-  emits('expand', config.groupName);
-}
+const selectedEnvironments = computed({
+  get: () => sortedSelectedEnvironments.value,
+  set: v => (homeStore.selectedEnvironments = v)
+});
 </script>
 <template>
-  <SetupConfigDialog v-model="setupConfig" @submit="onSubmitSetupConfig" />
   <Toolbar class="border-none p-0">
     <!-- <template #center>
-            <div class="p-input-icon-left">
-              <i class="pi pi-search"></i>
-              <InputText placeholder="Config name" :model-value="search" />
-            </div>
-          </template> -->
+      <Dropdown
+        v-model="selectedClient"
+        editable
+        :options="['CLEINT1', 'CLEINT2', 'CLEINT3']"
+        placeholder="Select a City"
+        class="w-full md:w-14rem"
+      />
+      {{ selectedClient }}
+    </template> -->
     <template #start>
       <Button
-        @click="setupConfig = true"
+        @click="openSetupConfigDialog()"
         label="New config"
         icon="pi pi-plus"
         size="small"
@@ -63,16 +44,17 @@ async function onSubmitSetupConfig(config: Config) {
     </template>
     <template #end>
       <Button
-        @click="addEnvironment"
+        @click="onAddEnvironment"
+        :disabled="disabledEnvironments"
         label="New environment"
         size="small"
         icon="pi pi-plus"
-        :disabled="configs.length === 0"
         class="mr-3"
       ></Button>
       <MultiSelect
-        v-model="_selectedEnvironments"
-        :options="environments"
+        v-model="selectedEnvironments"
+        :options="sortedEnvironments"
+        :disabled="disabledEnvironments"
         class="w-full sm:w-26rem"
         display="chip"
       >

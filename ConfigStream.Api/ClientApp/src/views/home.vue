@@ -1,35 +1,33 @@
 <script setup lang="ts">
 import { useConfigStore } from '@/store/config';
 import { type ConfigValue, useConfigValueStore } from '@/store/config-value';
+import { useHomeStore } from '@/store/home';
 import { storeToRefs } from 'pinia';
 import type { TreeNode } from 'primevue/tree';
-import { onMounted, computed, nextTick, reactive, ref } from 'vue';
+import { onMounted, computed, reactive } from 'vue';
 import { groupBy } from 'lodash';
 import ConfigValueComponent from '@/components/config-value.vue';
 import ConfigValueChip from '@/components/config-value-chip.vue';
 import ConfigActions from '@/components/config-actions.vue';
 import ConfigsToolbar from '@/components/configs-toolbar.vue';
+import SetupConfigDialog from '@/components/setup-config-dialog.vue';
 import { sort } from '@/utils/array';
 
 const configStore = useConfigStore();
 const configValueStore = useConfigValueStore();
-const {
-  selectedEnvironments,
-  items: configValues,
-  loading
-  // search
-} = storeToRefs(configValueStore);
-const { items: configs } = storeToRefs(configStore);
+const homeStore = useHomeStore();
+
+const { configValues } = storeToRefs(configValueStore);
+const { configs } = storeToRefs(configStore);
+const { sortedSelectedEnvironments, expandedNodes } = storeToRefs(homeStore);
 const { requestConfigValueList } = configValueStore;
 const { requestConfigList } = configStore;
+const { setEnvironmentsFromConfigValues, isEditing } = homeStore;
 
 onMounted(async () => {
   await requestConfigList();
   await requestConfigValueList();
-  nextTick(() => {
-    selectedEnvironments.value =
-      environments.value.length > 0 ? [environments.value[0]] : [];
-  });
+  setEnvironmentsFromConfigValues(configValues.value);
 });
 
 const nodes = computed<TreeNode[]>(() => {
@@ -40,27 +38,17 @@ const nodes = computed<TreeNode[]>(() => {
           y => x.groupName === y.groupName && x.name === y.configName
         )
     )
-    .map(x =>
-      reactive({
-        groupName: x.groupName,
-        configName: x.name,
-        environmentName: 'undefined'
-      })
-    );
+    .map(x => ({
+      groupName: x.groupName,
+      configName: x.name,
+      environmentName: 'undefined'
+    }));
 
   const list = sort(
     [...configValues.value, ...noValue],
     x => `${x.groupName}:${x.configName}`
   );
   return groupByGroupName(list);
-});
-const editNodes = ref<TreeNode[]>([]);
-const expandedKeys = ref<Record<string, boolean>>({});
-
-const environments = computed(() => {
-  return Array.from(
-    new Set(configValues.value.map(item => item.environmentName))
-  );
 });
 
 function getConfig(groupName: string, configName: string) {
@@ -78,16 +66,19 @@ function getEnvironmentValues(
   values: ConfigValue[]
 ) {
   const vals: Record<string, ConfigValue> = {};
-  selectedEnvironments.value.forEach(env => {
-    vals[env] =
-      values.find(x => x.environmentName === env) ??
-      reactive<ConfigValue>({
+  sortedSelectedEnvironments.value.forEach(env => {
+    let value = values.find(x => x.environmentName === env);
+    if (!value) {
+      value = reactive({
         configName,
         groupName,
         environmentName: env,
         targetName,
         value: undefined
       });
+      configValues.value.push(value);
+    }
+    vals[env] = value;
   });
   return vals;
 }
@@ -102,17 +93,15 @@ function groupByTargetName(
     x => x.targetName
   );
   const targetNames = sort(Object.getOwnPropertyNames(grouped), x => x);
-  return targetNames.map(x =>
-    reactive({
-      label: x,
-      key: `${groupName}:${configName}:${x}`,
-      type: 'target',
-      data: reactive({
-        config: getConfig(groupName, configName),
-        configValues: getEnvironmentValues(groupName, configName, x, grouped[x])
-      })
-    })
-  );
+  return targetNames.map(x => ({
+    label: x,
+    key: `${groupName}:${configName}:${x}`,
+    type: 'target',
+    data: {
+      config: getConfig(groupName, configName),
+      configValues: getEnvironmentValues(groupName, configName, x, grouped[x])
+    }
+  }));
 }
 
 function groupByConfigName(
@@ -120,63 +109,55 @@ function groupByConfigName(
   values: ConfigValue[]
 ): TreeNode[] {
   const grouped = groupBy(values, x => x.configName);
-  return Object.getOwnPropertyNames(grouped).map(x =>
-    reactive({
-      key: `${groupName}:${x}`,
-      label: x,
-      type: 'config',
-      data: reactive({
-        config: getConfig(groupName, x),
-        configValues: getEnvironmentValues(
-          groupName,
-          x,
-          undefined,
-          grouped[x].filter(y => !y.targetName)
-        )
-      }),
-      children: groupByTargetName(groupName, x, grouped[x])
-    })
-  );
+  return Object.getOwnPropertyNames(grouped).map(x => ({
+    key: `${groupName}:${x}`,
+    label: x,
+    type: 'config',
+    data: {
+      config: getConfig(groupName, x),
+      configValues: getEnvironmentValues(
+        groupName,
+        x,
+        undefined,
+        grouped[x].filter(y => !y.targetName)
+      )
+    },
+    children: groupByTargetName(groupName, x, grouped[x])
+  }));
 }
 
 function groupByGroupName(values: ConfigValue[]): TreeNode[] {
   const grouped = groupBy(values, x => x.groupName);
-  return Object.getOwnPropertyNames(grouped).map(x =>
-    reactive({
-      key: x,
-      label: x,
-      type: 'group',
-      children: groupByConfigName(x, grouped[x])
-    })
-  );
+  return Object.getOwnPropertyNames(grouped).map(x => ({
+    key: x,
+    label: x,
+    type: 'group',
+    children: groupByConfigName(x, grouped[x])
+  }));
 }
 
-function expand(groupName: string, configName?: string) {
-  expandedKeys.value[groupName] = true;
-  if (!configName) return;
-  expandedKeys.value[`${groupName}:${configName}`] = true;
+function isEdit(node: TreeNode): boolean {
+  return isEditing({
+    configName: node.data.config.name,
+    groupName: node.data.config.groupName,
+    targetName: node.type === 'target' ? node.label : undefined
+  });
 }
 </script>
 
 <template>
   <main>
+    <SetupConfigDialog />
     <TreeTable
       :value="nodes"
-      :loading="loading"
-      v-model:expanded-keys="expandedKeys"
+      v-model:expanded-keys="expandedNodes"
       loadingIcon="pi pi-spin pi-spinner"
       class="p-treetable-sm"
       resizable-columns
       show-gridlines
     >
       <template #header>
-        <ConfigsToolbar
-          :environments="environments"
-          v-model:selected-environments="selectedEnvironments"
-          :config-values="configValues"
-          :configs="configs"
-          @expand="expand"
-        />
+        <ConfigsToolbar />
       </template>
 
       <Column header="Name" expander>
@@ -210,7 +191,7 @@ function expand(groupName: string, configName?: string) {
         </template>
       </Column>
       <Column
-        v-for="env in selectedEnvironments"
+        v-for="env in sortedSelectedEnvironments"
         :key="env"
         :header="env"
         class="bg-primary-reverse"
@@ -221,22 +202,17 @@ function expand(groupName: string, configName?: string) {
             v-if="['config', 'target'].includes(node.type)"
             :config="node.data.config"
             :config-value="node.data.configValues[env]"
-            :edit="editNodes.includes(node)"
+            :edit="isEdit(node)"
             :disabled="node.data?.config.deleted"
           />
         </template>
       </Column>
       <Column headerStyle="width: 10rem">
         <template #body="{ node }">
-          <ConfigActions
-            :node="node"
-            :config-values="configValues"
-            :environments="environments"
-            :edit-nodes="editNodes"
-            @expand="expand"
-          />
+          <ConfigActions :node="node" />
         </template>
       </Column>
     </TreeTable>
   </main>
 </template>
+@/store/home

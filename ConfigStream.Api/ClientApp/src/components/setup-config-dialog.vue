@@ -1,7 +1,6 @@
 <template>
   <Dialog
-    :visible="modelValue"
-    @update:visible="v => $emit('update:modelValue', v)"
+    v-model:visible="visible"
     style="max-width: 50rem"
     modal
     header="Setup config"
@@ -47,12 +46,17 @@
   </Dialog>
 </template>
 <script setup lang="ts">
-import { watch } from 'vue';
+import { computed, watch } from 'vue';
 import { useField, useForm } from 'vee-validate';
 import { isValidRedisKey } from '@/utils/redisKey';
 import InputField from './input-field.vue';
-import { type Config } from '@/store/config';
-
+import { useConfigStore, type Config } from '@/store/config';
+import { useHomeStore } from '@/store/home';
+import { storeToRefs } from 'pinia';
+const homeStore = useHomeStore();
+const { closeSetupConfigDialog, expand } = homeStore;
+const { createOrUpdateConfig } = useConfigStore();
+const { setupConfigDialog } = storeToRefs(homeStore);
 const { handleSubmit, resetForm, errors, meta } = useForm();
 const { value: groupName } = useField<string>('groupName', validateKey);
 const { value: configName } = useField<string>('configName', validateKey);
@@ -71,37 +75,46 @@ function validateKey(value: string): boolean | string {
   return !!value || 'Field is required';
 }
 
+const visible = computed({
+  get: () => !!setupConfigDialog.value,
+  set: v => {
+    if (!v) onCancel();
+  }
+});
+
 watch(
   () => allowedValues.value,
   () => validateDefaultValue()
 );
 
-const props = defineProps<{
-  modelValue: boolean;
-}>();
-
-const emit = defineEmits<{
-  (event: 'update:modelValue', value: boolean): void;
-  (event: 'submit', value: Config): void;
-}>();
-
 const onSubmit = handleSubmit(values => {
-  emit('submit', {
+  createOrUpdateConfig({
     groupName: values.groupName,
     name: values.configName,
     description: values.description,
     defaultValue: values.defaultValue,
     allowedValues: values.allowedValues
   });
+  expand(values.groupName);
   onCancel();
 });
 
 function onCancel() {
-  emit('update:modelValue', false);
+  closeSetupConfigDialog();
 }
 
 watch(
-  () => props.modelValue,
-  () => resetForm()
+  () => setupConfigDialog.value,
+  (model: boolean | Config) => {
+    resetForm();
+    if (typeof model == 'boolean') {
+      return;
+    }
+    groupName.value = model.groupName;
+    configName.value = model.name;
+    description.value = model.description;
+    defaultValue.value = model.defaultValue;
+    allowedValues.value = model.allowedValues;
+  }
 );
 </script>

@@ -1,35 +1,3 @@
-// import type { ConfirmationOptions } from 'primevue/confirmationoptions';
-
-// type ConfirmType = {
-//   require: (option: ConfirmationOptions) => void;
-//   close: () => void;
-// };
-
-// let _confirm: ConfirmType;
-
-// export function initConfirm(confirm: ConfirmType) {
-//   _confirm = confirm;
-// }
-
-// export async function confirmDialog(
-//   message: string,
-//   header: string,
-//   icon: string = 'pi pi-info-circle'
-// ): Promise<boolean> {
-//   return new Promise<boolean>(resolve => {
-//     if (!_confirm) {
-//       throw 'Confirm no init';
-//     }
-//     _confirm.require({
-//       message,
-//       header,
-//       icon,
-//       accept: () => resolve(true),
-//       reject: () => resolve(false)
-//     });
-//   });
-// }
-
 import {
   type ConfirmDialog,
   type PromptDialog,

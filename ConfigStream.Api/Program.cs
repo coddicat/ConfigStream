@@ -24,7 +24,7 @@ services.AddCors(options =>
 services.AddEndpointsApiExplorer();
 
 services.AddSwaggerGen();
-services.AddSingleton<IConnectionMultiplexer>((_) => ConnectionMultiplexer.Connect("localhost:6379, defaultDatabase=5"));
+services.AddSingleton<IConnectionMultiplexer>((_) => ConnectionMultiplexer.Connect("localhost:6379, defaultDatabase=0"));
 
 
 services.AddScoped<IAdminConfig, AdminConfig>();

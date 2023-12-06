@@ -1,88 +1,104 @@
 <script setup lang="ts">
 import { type ConfigValue, useConfigValueStore } from '@/store/config-value';
-import { useConfigStore } from '@/store/config';
+import { type Config, useConfigStore } from '@/store/config';
 import { confirmDialog, promptDialog } from '@/utils/dialog';
 import { isValidRedisKey } from '@/utils/redisKey';
 import { type MenuItem } from 'primevue/menuitem';
 import { TreeNode } from 'primevue/tree';
-import { computed, nextTick, reactive } from 'vue';
+import { computed, reactive } from 'vue';
 import EllipsisMenu from './ellipsis-menu.vue';
+import { storeToRefs } from 'pinia';
+import { useHomeStore } from '@/store/home';
 
-const { submitConfigValues } = useConfigValueStore();
+const configValueStore = useConfigValueStore();
+const homeStore = useHomeStore();
+const { sortedEnvironments, selectedEnvironments } = storeToRefs(homeStore);
+const { submitConfigValues, addConfigValue } = configValueStore;
 const { deleteConfig } = useConfigStore();
-
-const emits = defineEmits<{
-  (event: 'expand', configGroup: string, configName: string): void;
-}>();
+const {
+  editConfigValues,
+  cancelEditConfigValues,
+  expand,
+  isEditing,
+  openSetupConfigDialog
+} = homeStore;
 
 const props = defineProps<{
   node: TreeNode;
-  editNodes: TreeNode[];
-  environments: string[];
-  configValues: ConfigValue[];
 }>();
 
-const _node = computed(() => props.node);
-const _editNodes = computed(() => props.editNodes);
-const _environments = computed(() => props.environments);
-const _configValues = computed(() => props.configValues);
+const data = computed<{
+  config: Config;
+  configValues: ConfigValue[];
+}>(() => props.node.data);
+const nodeType = computed(() => props.node.type);
+const target = computed(() =>
+  nodeType.value === 'target' ? props.node.label : undefined
+);
+const editConfigData = computed(() => ({
+  configName: data.value.config.name,
+  groupName: data.value.config.groupName,
+  targetName: target.value
+}));
+const isEdit = computed(() => isEditing(editConfigData.value));
 
-function getMenuItems(node: TreeNode): MenuItem[] {
+const menuItems = computed<MenuItem[]>(() => {
   return [
     {
       label: 'New target',
       icon: 'pi pi-stop-circle',
-      command: () => onAddTarget(node)
+      command: () => onAddTarget()
     },
     {
       separator: true
     },
     {
       label: 'Setup config',
-      icon: 'pi pi-cog'
+      icon: 'pi pi-cog',
+      command: () => openSetupConfigDialog(data.value.config)
     },
     {
       label: 'Delete config',
       icon: 'pi pi-trash',
-      command: () => onDelete(node)
+      command: () => onDelete()
     }
   ];
+});
+
+function onEditNode() {
+  const json = JSON.stringify(data.value.configValues);
+  editConfigValues(editConfigData.value, json);
 }
 
-function onEditNode(node: TreeNode) {
-  _editNodes.value.push(node);
-  const json = JSON.stringify(node.data.configValues);
-  node.data.originConfigValues = json;
+function onCancelEditNode() {
+  const json = cancelEditConfigValues(editConfigData.value);
+  if (!json) return;
+
+  const origin = reactive(JSON.parse(json));
+  data.value.configValues = origin;
 }
 
-function onCancelEditNode(node: TreeNode) {
-  const index = _editNodes.value.indexOf(node);
-  _editNodes.value.splice(index, 1);
-  const origin = reactive(JSON.parse(node.data.originConfigValues));
-  node.data.configValues = origin;
-}
-
-async function onSaveNode(node: TreeNode) {
-  const index = _editNodes.value.indexOf(node);
-  _editNodes.value.splice(index, 1);
-  delete node.data.originConfigValues;
-  const configValues = Object.getOwnPropertyNames(node.data.configValues).map(
-    x => node.data.configValues[x] as ConfigValue
+async function onSaveNode() {
+  const configValues = Object.getOwnPropertyNames(data.value.configValues).map(
+    x => data.value.configValues[x] as ConfigValue
   );
+
   await submitConfigValues(configValues);
+
+  cancelEditConfigValues(editConfigData.value);
 }
 
-async function onDelete(node: TreeNode) {
+async function onDelete() {
   const yes = await confirmDialog(
-    `Do you want to delete '${node.data.config.name}' config? (values will be preserved)`,
+    `Do you want to delete '${data.value.config.name}' config? (values will be preserved)`,
     'Delete Confirmation'
   );
   if (!yes) return;
 
-  await deleteConfig(node.data.config);
+  await deleteConfig(data.value.config);
 }
 
-async function onAddTarget(node: TreeNode): Promise<void> {
+async function onAddTarget(): Promise<void> {
   const res = await promptDialog(
     'Enter a new target name',
     'Adding a new target',
@@ -93,31 +109,30 @@ async function onAddTarget(node: TreeNode): Promise<void> {
   );
   if (!res) return;
 
-  _environments.value.forEach(env =>
-    _configValues.value.push({
-      configName: node.data.config.name,
-      groupName: node.data.config.groupName,
+  sortedEnvironments.value.forEach(env =>
+    addConfigValue({
+      configName: data.value.config.name,
+      groupName: data.value.config.groupName,
       environmentName: env,
       targetName: res
     })
   );
 
-  nextTick(() => {
-    emits('expand', node.data.config.groupName, node.data.config.name);
-  });
+  expand(data.value.config.groupName, data.value.config.name);
 }
 </script>
 
 <template>
   <div class="flex flex-row-reverse">
-    <template v-if="['config', 'target'].includes(_node.type)">
+    <template v-if="['config', 'target'].includes(nodeType)">
       <EllipsisMenu
-        :items="getMenuItems(node)"
-        :disabled="editNodes.includes(node) || _node.type === 'target'"
+        :items="menuItems"
+        :disabled="isEdit || nodeType === 'target'"
       />
       <Button
-        v-if="!editNodes.includes(node)"
-        @click="onEditNode(node)"
+        v-if="!isEdit"
+        @click="onEditNode"
+        :disabled="selectedEnvironments.length == 0"
         icon="pi pi-pencil"
         text
         size="small"
@@ -128,7 +143,7 @@ async function onAddTarget(node: TreeNode): Promise<void> {
       />
       <template v-else>
         <Button
-          @click="onCancelEditNode(node)"
+          @click="onCancelEditNode"
           icon="pi pi-times"
           text
           size="small"
@@ -138,7 +153,7 @@ async function onAddTarget(node: TreeNode): Promise<void> {
           title="Cancel editing"
         />
         <Button
-          @click="onSaveNode(node)"
+          @click="onSaveNode"
           icon="pi pi-save"
           text
           size="small"
