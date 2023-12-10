@@ -32,17 +32,17 @@ const model = computed({
       <InputText
         v-else
         v-model="model"
-        :disabled="disabled"
         @keydown.stop="() => {}"
+        :disabled="disabled"
         class="w-full"
       />
       <Button
+        @click="() => (model = undefined)"
         icon="pi pi-eraser"
-        text
-        rounded
         severity="danger"
         class="flex-grow-0 flex-shrink-0 force-small-button"
-        @click="() => (model = undefined)"
+        text
+        rounded
       />
     </div>
   </template>

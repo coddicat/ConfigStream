@@ -1,5 +1,6 @@
 import { getConfigValues, submitConfigValues } from '@/api/config-value';
 import { defineStore } from 'pinia';
+import type { ToastServiceMethods } from 'primevue/toastservice';
 
 export type ConfigValue = {
   configName: string;
@@ -10,30 +11,53 @@ export type ConfigValue = {
 };
 
 type Store = {
+  _toast?: ToastServiceMethods;
   configValues: ConfigValue[];
+  loading: boolean;
 };
 
 export const useConfigValueStore = defineStore('configValue', {
   state: (): Store => ({
-    configValues: []
+    configValues: [],
+    loading: false
   }),
   actions: {
+    initToast(toast: ToastServiceMethods) {
+      this._toast = toast;
+    },
     async requestConfigValueList() {
       try {
+        this.loading = true;
         this.configValues = await getConfigValues();
       } catch (error) {
-        console.error(error);
+        this._toast?.add({
+          severity: 'error',
+          summary: 'Failed to load configs values',
+          detail: error,
+          closable: true
+        });
       } finally {
-        //
+        this.loading = false;
       }
     },
     async submitConfigValues(configValues: ConfigValue[]) {
       try {
+        this.loading = true;
         await submitConfigValues(configValues);
+        this._toast?.add({
+          severity: 'success',
+          detail: 'The config values were successfully saved',
+          life: 3000
+        });
       } catch (error) {
-        console.error(error);
+        this._toast?.add({
+          severity: 'error',
+          summary: 'Failed to save config values',
+          detail: error,
+          closable: true
+        });
       } finally {
-        // ignore
+        this.loading = false;
       }
     },
     addConfigValue(configValue: ConfigValue) {

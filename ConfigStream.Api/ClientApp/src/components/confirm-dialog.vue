@@ -1,22 +1,3 @@
-<template>
-  <Dialog
-    v-model:visible="dialog"
-    style="max-width: 40rem"
-    modal
-    :header="model?.title"
-  >
-    <p class="m-0">{{ model?.message }}</p>
-    <template #footer>
-      <Button severity="success" @click="onAgree" label="Agree" />
-      <Button
-        severity="secondary"
-        @click="onDisagree"
-        label="Disagree"
-        autofocus
-      />
-    </template>
-  </Dialog>
-</template>
 <script setup lang="ts">
 import { useDialogStore } from '@/store/dialog';
 import { computed } from 'vue';
@@ -40,3 +21,29 @@ function onDisagree() {
   dialog.value = false;
 }
 </script>
+
+<template>
+  <Dialog
+    v-model:visible="dialog"
+    :header="model?.title"
+    class="confirm-dialog"
+    modal
+  >
+    <p class="m-0">{{ model?.message }}</p>
+    <template #footer>
+      <Button severity="success" @click="onAgree" label="Agree" />
+      <Button
+        severity="secondary"
+        @click="onDisagree"
+        label="Disagree"
+        autofocus
+      />
+    </template>
+  </Dialog>
+</template>
+
+<style lang="scss">
+.confirm-dialog {
+  max-width: 40rem;
+}
+</style>

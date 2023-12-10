@@ -1,7 +1,8 @@
 import { defineStore } from 'pinia';
-import type { ConfigValue } from './config-value';
+import { useConfigValueStore } from './config-value';
 import { sort } from '@/utils/array';
 import { useConfigStore, type Config } from './config';
+import type { ToastServiceMethods } from 'primevue/toastservice';
 
 type EditConfigValue = {
   groupName: string;
@@ -10,6 +11,8 @@ type EditConfigValue = {
 };
 
 type Store = {
+  _toast?: ToastServiceMethods;
+  _loading: boolean;
   selectedEnvironments: string[];
   environments: string[];
   editingConfigValues: Record<string, string>;
@@ -17,9 +20,10 @@ type Store = {
   setupConfigDialog: boolean | Config;
 };
 
-const configStore = useConfigStore();
 export const useHomeStore = defineStore('home', {
   state: (): Store => ({
+    _loading: false,
+    _toast: undefined,
     environments: [],
     selectedEnvironments: [],
     editingConfigValues: {},
@@ -27,13 +31,37 @@ export const useHomeStore = defineStore('home', {
     setupConfigDialog: false
   }),
   actions: {
+    initToast(toast: ToastServiceMethods) {
+      this._toast = toast;
+      useConfigStore().initToast(toast);
+      useConfigValueStore().initToast(toast);
+    },
+    async load() {
+      try {
+        this._loading = true;
+        const configTask = useConfigStore().requestConfigList();
+        const valueTask = useConfigValueStore().requestConfigValueList();
+        await Promise.all([configTask, valueTask]);
+        this.setEnvironmentsFromConfigValues();
+      } catch (error) {
+        this._toast?.add({
+          severity: 'error',
+          summary: 'Failed to load data',
+          detail: error,
+          closable: true
+        });
+      } finally {
+        this._loading = false;
+      }
+    },
     openSetupConfigDialog(config?: Config) {
       this.setupConfigDialog = config ?? true;
     },
     closeSetupConfigDialog() {
       this.setupConfigDialog = false;
     },
-    setEnvironmentsFromConfigValues(values: ConfigValue[]) {
+    setEnvironmentsFromConfigValues() {
+      const values = useConfigValueStore().configValues;
       this.environments = Array.from(
         new Set(values.map(value => value.environmentName))
       );
@@ -68,6 +96,14 @@ export const useHomeStore = defineStore('home', {
     }
   },
   getters: {
+    version: () => {
+      const v = import.meta.env.VITE_APP_VERSION;
+      return v;
+    },
+    loading: store =>
+      store._loading ||
+      useConfigValueStore().loading ||
+      useConfigStore().loading,
     isEditing:
       state =>
       (data: EditConfigValue): boolean => {
@@ -77,7 +113,7 @@ export const useHomeStore = defineStore('home', {
         );
       },
     disabledEnvironments: state =>
-      configStore.configs.length === 0 ||
+      useConfigStore().configs.length === 0 ||
       Object.getOwnPropertyNames(state.editingConfigValues).length > 0,
     sortedEnvironments: state => sort(state.environments, x => x),
     sortedSelectedEnvironments: state =>

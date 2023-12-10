@@ -28,7 +28,7 @@ namespace ConfigStream.Admin.Redis
         public Task CreateOrUpdateConfigAsync(Config config)
         {
             string groupName = config.GroupName;
-            string configName = config.Name;
+            string configName = config.ConfigName;
 
             return StoreConfigInTransactionAsync(groupName, configName, config);
         }        
@@ -117,9 +117,9 @@ namespace ConfigStream.Admin.Redis
             do
             {
                 var result = await _database.ExecuteAsync("SCAN", cursor, "MATCH", mask);
-                var innerResult = (RedisResult[])result;
-                cursor = int.Parse((string)innerResult[0]);
-                keys.AddRange((RedisKey[])innerResult[1]);
+                var innerResult = (RedisResult[]) result!;
+                cursor = int.Parse((string) innerResult[0]!);
+                keys.AddRange((RedisKey[]) innerResult[1]!);
             } while (cursor != 0);
 
             return keys.ToArray();
@@ -127,7 +127,7 @@ namespace ConfigStream.Admin.Redis
         private Task DeleteConfigInTransactionAsync(Config config)
         {
             ITransaction transaction = _database.CreateTransaction();
-            transaction.KeyDeleteAsync(RedisKeys.Config(config.GroupName, config.Name));
+            transaction.KeyDeleteAsync(RedisKeys.Config(config.GroupName, config.ConfigName));
             return transaction.ExecuteAsync();
         }
         private Task StoreConfigInTransactionAsync(string groupName, string configName, Config config)
@@ -143,11 +143,12 @@ namespace ConfigStream.Admin.Redis
             RedisValue redisValue = await _database.StringGetAsync(RedisKeys.Config(groupName, configName));
             if (redisValue.IsNullOrEmpty)
             {
-                throw new Exception($"The config {groupName}:{configName} doesn't exist");
+                Console.WriteLine($"The config {groupName}:{configName} doesn't exist");
+                return;
             }
 
-            Config config = JsonSerializer.Deserialize<Config>(redisValue);
-            if (config.AllowedValues != null && config.AllowedValues.Length > 0 && !config.AllowedValues.Contains(value))
+            Config? config = JsonSerializer.Deserialize<Config>(redisValue);
+            if (config?.AllowedValues != null && config.AllowedValues.Length > 0 && !config.AllowedValues.Contains(value))
             {
                 throw new Exception($"The value {value} for config {groupName}:{configName} is not allowed");
             }

@@ -10,6 +10,7 @@ function toggle(event: MouseEvent) {
   menu.value.toggle(event);
 }
 </script>
+
 <template>
   <Button
     @click="toggle"
@@ -19,6 +20,6 @@ function toggle(event: MouseEvent) {
     class="flex-shrink-0"
     text
     rounded
-  ></Button>
-  <TieredMenu ref="menu" :model="items" popup></TieredMenu>
+  />
+  <TieredMenu ref="menu" :model="items" popup />
 </template>

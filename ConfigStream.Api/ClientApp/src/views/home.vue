@@ -12,6 +12,7 @@ import ConfigActions from '@/components/config-actions.vue';
 import ConfigsToolbar from '@/components/configs-toolbar.vue';
 import SetupConfigDialog from '@/components/setup-config-dialog.vue';
 import { sort } from '@/utils/array';
+import LoadingSpinner from '@/components/loading-spinner.vue';
 
 const configStore = useConfigStore();
 const configValueStore = useConfigValueStore();
@@ -19,15 +20,12 @@ const homeStore = useHomeStore();
 
 const { configValues } = storeToRefs(configValueStore);
 const { configs } = storeToRefs(configStore);
-const { sortedSelectedEnvironments, expandedNodes } = storeToRefs(homeStore);
-const { requestConfigValueList } = configValueStore;
-const { requestConfigList } = configStore;
-const { setEnvironmentsFromConfigValues, isEditing } = homeStore;
+const { sortedSelectedEnvironments, expandedNodes, loading } =
+  storeToRefs(homeStore);
+const { load, isEditing } = homeStore;
 
 onMounted(async () => {
-  await requestConfigList();
-  await requestConfigValueList();
-  setEnvironmentsFromConfigValues(configValues.value);
+  await load();
 });
 
 const nodes = computed<TreeNode[]>(() => {
@@ -35,12 +33,12 @@ const nodes = computed<TreeNode[]>(() => {
     .filter(
       x =>
         !configValues.value.some(
-          y => x.groupName === y.groupName && x.name === y.configName
+          y => x.groupName === y.groupName && x.configName === y.configName
         )
     )
     .map(x => ({
       groupName: x.groupName,
-      configName: x.name,
+      configName: x.configName,
       environmentName: 'undefined'
     }));
 
@@ -54,8 +52,8 @@ const nodes = computed<TreeNode[]>(() => {
 function getConfig(groupName: string, configName: string) {
   return (
     configs.value.find(
-      y => y.groupName === groupName && y.name === configName
-    ) ?? reactive({ deleted: true })
+      y => y.groupName === groupName && y.configName === configName
+    ) ?? reactive({ groupName, configName, deleted: true })
   );
 }
 
@@ -138,7 +136,7 @@ function groupByGroupName(values: ConfigValue[]): TreeNode[] {
 
 function isEdit(node: TreeNode): boolean {
   return isEditing({
-    configName: node.data.config.name,
+    configName: node.data.config.configName,
     groupName: node.data.config.groupName,
     targetName: node.type === 'target' ? node.label : undefined
   });
@@ -147,11 +145,9 @@ function isEdit(node: TreeNode): boolean {
 
 <template>
   <main>
-    <SetupConfigDialog />
     <TreeTable
       :value="nodes"
       v-model:expanded-keys="expandedNodes"
-      loadingIcon="pi pi-spin pi-spinner"
       class="p-treetable-sm"
       resizable-columns
       show-gridlines
@@ -160,26 +156,20 @@ function isEdit(node: TreeNode): boolean {
         <ConfigsToolbar />
       </template>
 
-      <Column header="Name" expander>
+      <Column header="Name" expander body-class="home__ellipsis-column">
         <template #body="{ node }">
-          <i
-            v-if="node.type === 'target'"
-            class="pi pi-stop-circle mr-2"
-            style="font-size: 0.8rem"
-          ></i>
-          <span :class="{ 'line-through': node.data?.config.deleted }">
-            {{ node.label }}
+          <i v-if="node.type === 'target'" class="pi pi-stop-circle mr-2" />
+          <span v-if="node.data?.config.deleted" class="text-yellow-300 mr-2">
+            (deleted)
           </span>
+          {{ node.label }}
         </template>
       </Column>
-      <Column header="Description">
+      <Column header="Description" body-class="home__ellipsis-column">
         <template #body="{ node }">
-          <div
-            v-if="node.type === 'config'"
-            class="w-full text-overflow-ellipsis white-space-nowrap overflow-hidden"
-          >
+          <span v-if="node.type === 'config'">
             {{ node.data.config.description }}
-          </div>
+          </span>
         </template>
       </Column>
       <Column header="Default Value" body-class="text-center">
@@ -203,16 +193,27 @@ function isEdit(node: TreeNode): boolean {
             :config="node.data.config"
             :config-value="node.data.configValues[env]"
             :edit="isEdit(node)"
-            :disabled="node.data?.config.deleted"
           />
         </template>
       </Column>
-      <Column headerStyle="width: 10rem">
+      <Column headerStyle="width: 9.5rem">
         <template #body="{ node }">
           <ConfigActions :node="node" />
         </template>
       </Column>
     </TreeTable>
+
+    <SetupConfigDialog />
+    <LoadingSpinner :value="loading" />
   </main>
 </template>
-@/store/home
+
+<style lang="scss">
+.home {
+  &__ellipsis-column {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+</style>

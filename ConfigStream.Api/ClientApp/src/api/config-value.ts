@@ -1,13 +1,8 @@
 import { type ConfigValue } from '@/store/config-value';
 import { instance } from './instance';
 
-export async function getConfigValues(/*search?: string*/): Promise<
-  ConfigValue[]
-> {
+export async function getConfigValues(): Promise<ConfigValue[]> {
   const response = await instance.get<ConfigValue[]>('/value', {
-    // params: {
-    //   search
-    // },
     paramsSerializer: {
       indexes: null
     }

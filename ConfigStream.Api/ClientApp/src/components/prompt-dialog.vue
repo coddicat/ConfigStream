@@ -1,31 +1,3 @@
-<template>
-  <Dialog
-    v-model:visible="dialog"
-    style="max-width: 40rem"
-    modal
-    :header="model?.title"
-  >
-    <p class="m-0">{{ model?.message }}</p>
-    <form ref="form" @submit="onSubmit" class="flex flex-column gap-2">
-      <InputText
-        type="text"
-        v-model="value"
-        autofocus
-        :class="{ 'p-invalid': errorMessage }"
-      />
-      <small class="p-error">{{ errorMessage || '&nbsp;' }}</small>
-    </form>
-    <template #footer>
-      <Button severity="secondary" @click="onCancel" label="Cancel" />
-      <Button
-        severity="primary"
-        @click="onSubmit"
-        :disabled="!meta.valid"
-        label="Submit"
-      />
-    </template>
-  </Dialog>
-</template>
 <script setup lang="ts">
 import { useDialogStore } from '@/store/dialog';
 import { watch, computed } from 'vue';
@@ -65,3 +37,38 @@ watch(
   () => resetForm()
 );
 </script>
+
+<template>
+  <Dialog
+    v-model:visible="dialog"
+    class="prompt-dialog"
+    modal
+    :header="model?.title"
+  >
+    <p class="m-0">{{ model?.message }}</p>
+    <form ref="form" @submit="onSubmit" class="flex flex-column gap-2">
+      <InputText
+        type="text"
+        v-model="value"
+        autofocus
+        :class="{ 'p-invalid': errorMessage }"
+      />
+      <small class="p-error">{{ errorMessage || '&nbsp;' }}</small>
+    </form>
+    <template #footer>
+      <Button severity="secondary" @click="onCancel" label="Cancel" />
+      <Button
+        severity="primary"
+        @click="onSubmit"
+        :disabled="!meta.valid"
+        label="Submit"
+      />
+    </template>
+  </Dialog>
+</template>
+
+<style lang="scss">
+.prompt-dialog {
+  max-width: 40rem;
+}
+</style>
