@@ -14,15 +14,18 @@ const { handleSubmit, resetForm, errors, meta } = useForm();
 const exists = ref(false);
 const { value: groupName } = useField<string>('groupName', validateKey);
 const { value: configName } = useField<string>('configName', validateKey);
-const { value: description } = useField<string>('description');
-const { value: defaultValue, validate: validateDefaultValue } =
-  useField<string>('defaultValue', (value: string) => {
-    if (!value || !allowedValues.value || allowedValues.value.length === 0) {
-      return true;
-    }
-    return allowedValues.value.includes(value) || 'Must match an allowed value';
-  });
-const { value: allowedValues } = useField<string[]>('allowedValues');
+const { value: description } = useField<string | undefined>('description');
+const { value: defaultValue, validate: validateDefaultValue } = useField<
+  string | undefined
+>('defaultValue', (value: string | undefined) => {
+  if (!value || !allowedValues.value || allowedValues.value.length === 0) {
+    return true;
+  }
+  return allowedValues.value.includes(value) || 'Must match an allowed value';
+});
+const { value: allowedValues } = useField<string[] | undefined>(
+  'allowedValues'
+);
 
 function validateKey(value: string): boolean | string {
   if (!isValidRedisKey(value)) return 'Invalid format';

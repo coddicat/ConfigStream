@@ -44,13 +44,13 @@ namespace ConfigStream.Redis
         private async Task TryReadDefaultFromRedisAsync(IHandlerContext context)
         {
             var configKey = RedisKeys.Config(context.GroupName, context.ConfigName);
-            var configRedisValue = await _database.StringGetAsync(configKey);
+            RedisValue configRedisValue = await _database.StringGetAsync(configKey);
             if (!configRedisValue.HasValue)
             {
                 return;
             }
-            
-            var config = JsonSerializer.Deserialize<Config>(configRedisValue);
+
+            Config config = JsonSerializer.Deserialize<Config>(configRedisValue);
             if (config?.DefaultValue is null)
             {
                 return;

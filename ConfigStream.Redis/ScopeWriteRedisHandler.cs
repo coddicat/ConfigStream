@@ -34,8 +34,8 @@ namespace ConfigStream.Redis
         private async Task ValidateAllowedValuesAsync(IHandlerContext context)
         {
             var value = context.Value.Data;
-            var redisValue = await _database.StringGetAsync(RedisKeys.Config(context.GroupName, context.ConfigName));
-            var config = JsonSerializer.Deserialize<Config>(redisValue);
+            RedisValue redisValue = await _database.StringGetAsync(RedisKeys.Config(context.GroupName, context.ConfigName));
+            Config config = JsonSerializer.Deserialize<Config>(redisValue);
             if (config?.AllowedValues != null && !config.AllowedValues.Contains(value))
             {
                 throw new Exception($"The value {value} for config {context.GroupName}:{context.ConfigName} is not allowed");

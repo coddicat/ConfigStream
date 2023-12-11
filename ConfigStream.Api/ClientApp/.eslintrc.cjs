@@ -28,6 +28,7 @@ module.exports = {
     sourceType: 'module'
   },
   rules: {
+    '@typescript-eslint/consistent-type-imports': 'error',
     'vue/multi-word-component-names': 'off',
     'vue/no-reserved-component-names': 'off',
     'no-console': process.env.NODE_ENV === 'production' ? 'warn' : 'off',

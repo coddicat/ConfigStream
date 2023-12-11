@@ -4,7 +4,7 @@ import { type Config, useConfigStore } from '@/store/config';
 import { confirmDialog, promptDialog } from '@/utils/dialog';
 import { isValidRedisKey } from '@/utils/redisKey';
 import { type MenuItem } from 'primevue/menuitem';
-import { TreeNode } from 'primevue/tree';
+import { type TreeNode } from 'primevue/tree';
 import { computed, reactive } from 'vue';
 import EllipsisMenu from './ellipsis-menu.vue';
 import { storeToRefs } from 'pinia';
@@ -30,9 +30,10 @@ const props = defineProps<{
 
 const data = computed<{
   config: Config;
-  configValues: ConfigValue[];
+  configValues: Record<string, ConfigValue>;
 }>(() => props.node.data);
-const nodeType = computed(() => props.node.type);
+
+const nodeType = computed(() => props.node.type ?? '');
 const target = computed(() =>
   nodeType.value === 'target' ? props.node.label : undefined
 );
@@ -44,7 +45,7 @@ const editConfigData = computed(() => ({
 const isEdit = computed(() => isEditing(editConfigData.value));
 const values = computed(() =>
   Object.getOwnPropertyNames(data.value.configValues).map(
-    x => data.value.configValues[x] as ConfigValue
+    x => data.value.configValues[x]
   )
 );
 
@@ -92,12 +93,7 @@ function onCancelEditNode() {
 }
 
 async function onSaveNode() {
-  const configValues = Object.getOwnPropertyNames(data.value.configValues).map(
-    x => data.value.configValues[x] as ConfigValue
-  );
-
-  await submitConfigValues(configValues);
-
+  await submitConfigValues(values.value);
   cancelEditConfigValues(editConfigData.value);
 }
 

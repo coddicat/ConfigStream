@@ -3,4 +3,4 @@ obj/
 bin/
 .vscode/
 node_modules/
-/ConfigStream.Api/wwwroot
+/ConfigStream.Api/wwwroot/

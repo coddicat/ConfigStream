@@ -5,6 +5,11 @@ using System.Threading.Tasks;
 
 namespace ConfigStream.Pipeline
 {
+    /// <summary>
+    /// A ConfigStream handler that facilitates reading configuration values from a local scope-based cache.
+    /// This handler is part of the ConfigStream pipeline and is responsible for accessing configuration data
+    /// that is stored locally within the defined scope of a process.
+    /// </summary>
     public class ScopeReadLocalHandler : IConfigStreamHandler
     {
         private readonly ConcurrentDictionary<string, string> _localCache;

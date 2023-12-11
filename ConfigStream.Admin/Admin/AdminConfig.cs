@@ -2,29 +2,17 @@
 using ConfigStream.Admin.Redis.Models;
 using ConfigStream.Redis;
 using StackExchange.Redis;
-using System;
 using System.Text.Json;
 
 namespace ConfigStream.Admin.Redis
 {
-    public interface IAdminConfig
-    {
-        Task CreateOrUpdateConfigAsync(Config config);        
-        Task DeleteConfigAsync(string groupName, string configName);
-        Task SetConfigValueAsync(SubmitConfigValue[] configValue);
-        Task<ConfigValue[]> GetValuesAsync();
-        Task<Config[]> GetConfigsAsync();
-    }
-
     public class AdminConfig : IAdminConfig
     {
         private readonly IDatabase _database;
-
         public AdminConfig(IDatabase database)
         {
             _database = database;
         }
-
         public Task CreateOrUpdateConfigAsync(Config config)
         {
             string groupName = config.GroupName;
@@ -44,7 +32,6 @@ namespace ConfigStream.Admin.Redis
             RedisKey redisKey = RedisKeys.EnvironmentTargetValue(environmentName, groupName, configName, targetName);
             await _database.StringSetAsync(redisKey, value);
         }
-
         public Task SetConfigValueAsync(SubmitConfigValue[] configValues)
         {
             List<Task> tasks = new List<Task>();
@@ -68,14 +55,33 @@ namespace ConfigStream.Admin.Redis
             }
             return Task.WhenAll(tasks);
         }
-        
+
+        public async Task<Config?> GetConfigAsync(string groupName, string configName)
+        {
+            var key = $"ConfigSteam:Configs:{groupName}:{configName}";
+            RedisValue redisConfig = await _database.StringGetAsync(key);
+            if (redisConfig.IsNullOrEmpty)
+            {
+                return null;
+            }
+            Config? config = JsonSerializer.Deserialize<Config>(redisConfig!);
+            return config;
+        }
+
         public async Task<Config[]> GetConfigsAsync()
         {
             var prefix = "ConfigSteam:Configs:";
-            var keys = await ScanKeysAsync($"{prefix}*");
-            var redisConfigs = await _database.StringGetAsync(keys);
-            var configs = redisConfigs
-                .Select(x => JsonSerializer.Deserialize<Config>(x))
+            RedisKey[] keys = await ScanKeysAsync($"{prefix}*");
+            RedisValue[] redisConfigs = await _database.StringGetAsync(keys);
+            if (redisConfigs is null)
+            {
+                return Array.Empty<Config>();
+            }
+
+            Config[] configs = redisConfigs
+                .Where(redisConfig => !redisConfig.IsNullOrEmpty)
+                .Select(redisConfig => JsonSerializer.Deserialize<Config>(redisConfig!))
+                .OfType<Config>()
                 .ToArray();
 
             return configs;
@@ -85,17 +91,26 @@ namespace ConfigStream.Admin.Redis
         {
             string redisKey = RedisKeys.Config(groupName, configName);
             RedisValue redisValue = await _database.StringGetAsync(redisKey);
-            Config config = JsonSerializer.Deserialize<Config>(redisValue);
-
+            if (redisValue.IsNullOrEmpty)
+            {
+                return;
+            }
+            
+            Config config = JsonSerializer.Deserialize<Config>(redisValue!)!;
             await DeleteConfigInTransactionAsync(config);
         }
 
         public async Task<ConfigValue[]> GetValuesAsync()
         {
             var prefix = "ConfigSteam:Values:Environments:";
-            var keys = await ScanKeysAsync($"{prefix}*");
-            var redisValues = await _database.StringGetAsync(keys);
-            var configValues = keys
+            RedisKey[] keys = await ScanKeysAsync($"{prefix}*");
+            RedisValue[] redisValues = await _database.StringGetAsync(keys);
+            if (redisValues is null)
+            {
+                return Array.Empty<ConfigValue>();
+            }
+            
+            ConfigValue[] configValues = keys
                 .Select(x => x.ToString().Substring(prefix.Length).Split(":"))
                 .Select((x, i) => new ConfigValue
                 {
@@ -103,10 +118,33 @@ namespace ConfigStream.Admin.Redis
                     GroupName = x[1],
                     ConfigName = x[2],
                     TargetName = x.Length >= 4 ? x[3] : null,
-                    Value = redisValues[i]
+                    Value = redisValues[i]!
                 }).ToArray();
 
             return configValues;
+        }
+
+        public async Task<ConfigValue?> GetValueAsync(string groupName, string configName, string environment, string? target = null)
+        {
+            var key = $"ConfigSteam:Values:Environments:{environment}:{groupName}:{configName}";
+            if (!string.IsNullOrEmpty(target)) 
+            {
+                key += $":{target}";
+            }
+            RedisValue redisValues = await _database.StringGetAsync(key);
+            if (redisValues.IsNullOrEmpty)
+            {
+                return null;
+            }
+
+            return new ConfigValue
+            {
+                EnvironmentName = environment,
+                GroupName = groupName,
+                ConfigName = configName,
+                TargetName = target,
+                Value = redisValues!
+            };
         }
 
         #region Private
@@ -116,7 +154,7 @@ namespace ConfigStream.Admin.Redis
             int cursor = 0;
             do
             {
-                var result = await _database.ExecuteAsync("SCAN", cursor, "MATCH", mask);
+                RedisResult result = await _database.ExecuteAsync("SCAN", cursor, "MATCH", mask);
                 var innerResult = (RedisResult[]) result!;
                 cursor = int.Parse((string) innerResult[0]!);
                 keys.AddRange((RedisKey[]) innerResult[1]!);
@@ -147,7 +185,7 @@ namespace ConfigStream.Admin.Redis
                 return;
             }
 
-            Config? config = JsonSerializer.Deserialize<Config>(redisValue);
+            Config? config = JsonSerializer.Deserialize<Config>(redisValue!);
             if (config?.AllowedValues != null && config.AllowedValues.Length > 0 && !config.AllowedValues.Contains(value))
             {
                 throw new Exception($"The value {value} for config {groupName}:{configName} is not allowed");

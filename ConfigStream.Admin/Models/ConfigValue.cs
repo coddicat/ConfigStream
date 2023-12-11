@@ -2,11 +2,10 @@
 {
     public class ConfigValue
     {
-        public string GroupName { get; set; }
-        public string ConfigName { get; set; }
-        public string EnvironmentName { get; set; }
-        public string TargetName { get; set; }
-        public string Value { get; set; }
-        public bool Deleted { get; set; }
+        public required string GroupName { get; set; }
+        public required string ConfigName { get; set; }
+        public required string EnvironmentName { get; set; }
+        public string? TargetName { get; set; }
+        public required string Value { get; set; }
     }
 }

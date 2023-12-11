@@ -29,6 +29,10 @@ onMounted(async () => {
 });
 
 const nodes = computed<TreeNode[]>(() => {
+  if (!configs.value || !configValues.value) {
+    return [];
+  }
+
   const noValue = configs.value
     .filter(
       x =>

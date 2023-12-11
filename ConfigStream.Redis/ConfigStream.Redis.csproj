@@ -2,6 +2,21 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <PackageId>ConfigStream.Redis</PackageId>
+    <Version>0.0.1</Version>
+    <Authors>Rodion Shlomo Solomonyk</Authors>
+    <Company>Coddicat</Company>
+    <ProjectUrl>https://github.com/coddicat/ConfigStream</ProjectUrl>
+    
+    <Description>
+      The ConfigStream.Redis package is an essential extension of the ConfigStream library, 
+      designed to integrate Redis into the ConfigStream ecosystem of .NET applications. 
+      It provides specialized Redis read/write handlers, enabling seamless integration of Redis as a data store within the ConfigStream pipelines.       
+    </Description>
+
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+
   </PropertyGroup>
 
   <ItemGroup>
