@@ -1,10 +1,8 @@
-import { Config } from '@/store/config';
+import { type Config } from '@/store/config';
 import { instance } from './instance';
 
-export async function getConfigs(search?: string) {
-  const response = await instance.get<Config[]>('/config', {
-    params: { search }
-  });
+export async function getConfigs() {
+  const response = await instance.get<Config[]>('/config');
   return response.data;
 }
 
@@ -13,5 +11,5 @@ export function createOrUpdateConfig(config: Config) {
 }
 
 export function deleteConfig(config: Config) {
-  return instance.delete(`/config/${config.groupName}/${config.name}`);
+  return instance.delete(`/config/${config.groupName}/${config.configName}`);
 }

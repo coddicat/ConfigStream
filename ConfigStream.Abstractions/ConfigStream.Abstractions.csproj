@@ -3,10 +3,11 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <PackageId>ConfigStream.Abstractions</PackageId>
-    <Version>0.0.1-rc</Version>
+    <Version>0.0.1</Version>
     <Authors>Rodion Shlomo Solomonyk</Authors>
     <Company>Coddicat</Company>
-
+    <ProjectUrl>https://github.com/coddicat/ConfigStream</ProjectUrl>
+    
     <Description>
       ConfigStream.Abstractions provides the necessary base interfaces and abstract classes for the ConfigStream library, enabling loosely-coupled integration in .NET applications. 
       This package is intended to be referenced by microservices or other packages which need to use ConfigStream but without the need for direct dependencies on the concrete implementation.
@@ -18,7 +19,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="6.0.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="7.0.0" />
   </ItemGroup>
 
 </Project>

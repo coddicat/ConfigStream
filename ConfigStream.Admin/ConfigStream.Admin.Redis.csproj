@@ -1,19 +1,28 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net7.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    
+    <PackageId>ConfigStream.Admin.Redis</PackageId>
+    <Version>0.0.1</Version>
+    <Authors>Rodion Shlomo Solomonyk</Authors>
+    <Company>Coddicat</Company>
+
+    <Description>
+    </Description>
+
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="ConfigStream.Redis" Version="0.0.1" />
     <PackageReference Include="Microsoft.Extensions.Caching.Abstractions" Version="7.0.0" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="7.0.0" />
-    <PackageReference Include="StackExchange.Redis" Version="2.6.111" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\ConfigStream.Abstractions\ConfigStream.Abstractions.csproj" />
-    <ProjectReference Include="..\ConfigStream.Redis\ConfigStream.Redis.csproj" />
+    <PackageReference Include="StackExchange.Redis" Version="2.6.122" />
   </ItemGroup>
 
 </Project>

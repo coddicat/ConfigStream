@@ -28,7 +28,7 @@ namespace ConfigStream.Builder
         {
             HandlerResolverDelegate next = (x) => (y) => Task.CompletedTask;
 
-            foreach (var type in _handlerChain)
+            foreach (Type type in _handlerChain)
             {
                 Func<IServiceProvider, IConfigStreamHandler> handlerResolver = (serviceProvider) =>
                 {

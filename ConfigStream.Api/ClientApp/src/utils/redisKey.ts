@@ -1,6 +1,6 @@
 export function isValidRedisKey(key: string): boolean {
   const MAX_KEY_LENGTH = 100;
-  const INVALID_CHAR_REGEX = /[\p{Cc}\p{Z}]/gu;
+  const INVALID_CHAR_REGEX = /[\p{Cc}\p{Z}:*?]/gu;
 
   if (typeof key !== 'string') {
     return false;

@@ -1,123 +1,84 @@
 import { createOrUpdateConfig, deleteConfig, getConfigs } from '@/api/config';
-import { createConfigGroup } from '@/api/config-group';
 import { defineStore } from 'pinia';
-import { DebouncedFunc, debounce } from 'lodash';
-import { SortItem } from '@/type';
+import type { ToastServiceMethods } from 'primevue/toastservice';
 
 export type Config = {
-  name: string;
+  configName: string;
   groupName: string;
   description?: string;
   allowedValues?: string[];
   defaultValue?: string;
-};
-export type ConfigFormDialog = {
-  open: boolean;
-  loading: boolean;
-  config?: Config;
-  new?: boolean;
+  deleted?: boolean;
 };
 
 type Store = {
-  items: Config[];
-  total: number;
-  page: number;
-  itemsPerPage: number;
+  _toast?: ToastServiceMethods;
+  configs: Config[];
   loading: boolean;
-  search?: string;
-  sortBy?: SortItem;
-
-  formDialog: ConfigFormDialog;
 };
-
-let debouncedRequestConfigList: undefined | DebouncedFunc<() => Promise<void>>;
 
 export const useConfigStore = defineStore('config', {
   state: (): Store => ({
-    items: [],
-    total: 0,
-    page: 1,
-    itemsPerPage: 10,
-    loading: false,
-    formDialog: {
-      open: false,
-      loading: false
-    },
-    search: undefined,
-    sortBy: undefined
+    configs: [],
+    loading: false
   }),
   actions: {
-    debouncedRequestConfigList() {
-      if (!debouncedRequestConfigList) {
-        debouncedRequestConfigList = debounce(this.requestConfigList, 300);
-      }
-      debouncedRequestConfigList();
+    initToast(toast: ToastServiceMethods) {
+      this._toast = toast;
     },
     async requestConfigList() {
       try {
         this.loading = true;
-        const items = await getConfigs(this.search);
-        this.items = items;
-        this.total = items.length;
+        this.configs = await getConfigs();
       } catch (error) {
-        console.error(error);
+        this._toast?.add({
+          severity: 'error',
+          summary: 'Failed to load configs',
+          detail: error,
+          closable: true
+        });
       } finally {
         this.loading = false;
       }
     },
-    updateItemsPerPage(v: number) {
-      this.itemsPerPage = v;
-      this.debouncedRequestConfigList();
-    },
-    updatePage(v: number) {
-      this.page = v;
-      this.debouncedRequestConfigList();
-    },
-    updateSearch(v?: string) {
-      this.search = v;
-      this.debouncedRequestConfigList();
-    },
-    openEditConfigDialog(config: Config) {
-      this.formDialog = {
-        config,
-        open: true,
-        loading: false
-      };
-    },
-    openCreateConfigDialog() {
-      this.formDialog = {
-        new: true,
-        open: true,
-        loading: false
-      };
-    },
-    closeDialog() {
-      this.formDialog.open = false;
-    },
-    async createOrUpdateConfig(config: Config, createGroup: boolean) {
+    async createOrUpdateConfig(config: Config) {
       try {
-        this.formDialog.loading = true;
-        if (createGroup) {
-          await createConfigGroup({
-            name: config.groupName
-          });
-        }
+        this.loading = true;
         await createOrUpdateConfig(config);
-        this.formDialog.open = false;
-        this.requestConfigList();
+        await this.requestConfigList();
+        this._toast?.add({
+          severity: 'success',
+          detail: 'The config was successfully created or updated',
+          life: 3000
+        });
       } catch (error) {
-        console.error(error);
+        this._toast?.add({
+          severity: 'error',
+          summary: 'Failed to create or update config',
+          detail: error,
+          closable: true
+        });
       } finally {
-        this.formDialog.loading = false;
+        this.loading = false;
       }
     },
     async deleteConfig(config: Config) {
       try {
         this.loading = true;
         await deleteConfig(config);
-        this.requestConfigList();
+        await this.requestConfigList();
+        this._toast?.add({
+          severity: 'success',
+          detail: 'The config was successfully deleted',
+          life: 3000
+        });
       } catch (error) {
-        console.error(error);
+        this._toast?.add({
+          severity: 'error',
+          summary: 'Failed to delete config',
+          detail: error,
+          closable: true
+        });
       } finally {
         this.loading = false;
       }

@@ -1,0 +1,15 @@
+root = true
+
+[*.cs]
+# Async methods should be awaited
+dotnet_diagnostic.CS4014.severity = error
+
+# Async methods should end with Async
+dotnet_naming_rule.async_methods_end_in_async.suffix = Async
+dotnet_naming_rule.async_methods_end_in_async.severity = error
+
+# Use var only when type is evident
+dotnet_diagnostic.IDE0008.severity = warning
+csharp_style_var_when_type_is_apparent = true
+csharp_style_var_for_built_in_types = true
+csharp_style_var_elsewhere = false
