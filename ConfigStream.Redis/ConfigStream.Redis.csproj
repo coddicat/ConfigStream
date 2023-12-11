@@ -20,12 +20,9 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="ConfigStream.Abstractions" Version="0.0.1" />
     <PackageReference Include="StackExchange.Redis" Version="2.6.122" />
     <PackageReference Include="System.Text.Json" Version="7.0.3" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\ConfigStream.Abstractions\ConfigStream.Abstractions.csproj" />
   </ItemGroup>
 
 </Project>

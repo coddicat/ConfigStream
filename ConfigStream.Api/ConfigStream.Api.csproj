@@ -15,6 +15,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="ConfigStream" Version="0.0.1" />
     <PackageReference Include="StackExchange.Redis" Version="2.6.122" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
     <PackageReference Include="Swashbuckle.AspNetCore.Annotations" Version="6.5.0" />
@@ -22,8 +23,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ConfigStream.Admin\ConfigStream.Admin.Redis.csproj" />
-    <ProjectReference Include="..\ConfigStream.Redis\ConfigStream.Redis.csproj" />
-    <ProjectReference Include="..\ConfigStream\ConfigStream.csproj" />
   </ItemGroup>
 
 </Project>

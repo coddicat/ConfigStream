@@ -22,7 +22,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ConfigStream.Abstractions\ConfigStream.Abstractions.csproj" />
+    <PackageReference Include="ConfigStream.Abstractions" Version="0.0.1" />
   </ItemGroup>
 
 </Project>
