@@ -11,6 +11,8 @@
     <Company>Coddicat</Company>
 
     <Description>
+      Integrating configuration management capabilities into administrative or backend systems. 
+      This package focuses on providing tools and interfaces for creating, modifying, and retrieving configuration settings stored in Redis
     </Description>
 
     <PackageLicenseExpression>MIT</PackageLicenseExpression>

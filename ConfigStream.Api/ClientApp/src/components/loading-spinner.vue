@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { nextTick } from 'process';
 import { ref, watch } from 'vue';
 
 const props = defineProps<{
@@ -22,9 +21,7 @@ watch(
 
     const delay = 200 - (now.getTime() - (start ?? now).getTime());
     stop = setTimeout(() => {
-      nextTick(() => {
-        visible.value = false;
-      });
+      visible.value = false;
     }, delay);
   }
 );

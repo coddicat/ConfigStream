@@ -5,7 +5,7 @@ VisualStudioVersion = 17.5.33516.290
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ConfigStream.Api", "ConfigStream.Api\ConfigStream.Api.csproj", "{E3BEF5B4-AC5F-4BD1-9E58-A2BEB6D119E5}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ConfigStream.Admin.Redis", "ConfigStream.Admin\ConfigStream.Admin.Redis.csproj", "{68AB83B0-105E-4027-ACA0-72A9AC930DB6}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ConfigStream.Admin.Redis", "ConfigStream.Admin.Redis\ConfigStream.Admin.Redis.csproj", "{68AB83B0-105E-4027-ACA0-72A9AC930DB6}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ConfigStream.Abstractions", "ConfigStream.Abstractions\ConfigStream.Abstractions.csproj", "{AD9F9EEF-D93A-4C9D-B75B-D6BBE33D2D15}"
 EndProject
