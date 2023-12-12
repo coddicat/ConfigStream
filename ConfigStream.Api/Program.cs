@@ -3,13 +3,15 @@ using ConfigStream.Api.Startup;
 WebApplicationBuilder builder = WebApplication
     .CreateBuilder(args);
 
+IConfiguration configuration = builder.Configuration;
+
 builder
     .Services
-    .ConfigureServices();
+    .ConfigureServices(configuration);
 
 WebApplication app = builder
     .Build()
-    .ConfigureWebApplication();
+    .ConfigureWebApplication(configuration);
 
 app.MapGroup("api").ConfigureApiEndpoints();
 app.MapFallbackToFile("index.html");

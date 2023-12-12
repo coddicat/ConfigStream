@@ -16,7 +16,7 @@ export default defineConfig({
     }
   },
   build: {
-    outDir: '../wwwroot',
+    outDir: './build',
     emptyOutDir: true
   }
 });
