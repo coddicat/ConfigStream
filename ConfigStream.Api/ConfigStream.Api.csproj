@@ -5,7 +5,6 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
 
-    <PackageId>ConfigStream.Api</PackageId>
     <Version>0.0.1</Version>
     <Authors>Rodion Shlomo Solomonyk</Authors>
     <Company>Coddicat</Company>
@@ -17,8 +16,7 @@
 
   <ItemGroup>
     <Compile Remove="ClientApp\**" />    
-    <Content Remove="ClientApp\**" />
-    <Content Remove="wwwroot\**" />
+    <Content Remove="ClientApp\**" />    
     <EmbeddedResource Remove="ClientApp\**" />
     <None Remove="ClientApp\**" />
   </ItemGroup>
@@ -29,6 +27,10 @@
     <PackageReference Include="StackExchange.Redis" Version="2.6.122" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
     <PackageReference Include="Swashbuckle.AspNetCore.Annotations" Version="6.5.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="wwwroot\" />
   </ItemGroup>
 
 </Project>

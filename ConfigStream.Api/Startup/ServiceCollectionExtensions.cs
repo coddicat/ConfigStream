@@ -5,52 +5,41 @@ using ConfigStream.Redis;
 using ConfigStream.Pipeline;
 using ConfigStream.Abstractions.Builder;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.Extensions.Configuration;
 
 namespace ConfigStream.Api.Startup
 {
     public static class ServiceCollectionExtensions
     {
-        public static IServiceCollection ConfigureServices(this IServiceCollection services)
+        public static IServiceCollection ConfigureServices(this IServiceCollection services, IConfiguration configuration)
         {
-            return services
+            string? connectionString = configuration.GetConnectionString("Redis");
+            ArgumentException.ThrowIfNullOrEmpty(connectionString, nameof(connectionString));
+            bool swagger = configuration.GetValue<bool>("Swagger");
+
+            if (swagger)
+            {
+                services
                 .AddHttpContextAccessor()
+                .AddEndpointsApiExplorer()
+                .AddSwaggerGen(c =>
+                {
+                    c.EnableAnnotations();
+                    c.DocumentFilter<PrefixSwaggerDocumentFilter>();
+                });
+            }
+
+            return services
                 .Configure<ForwardedHeadersOptions>(options =>
                     options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto)
                 .AddCors()
-                .AddEndpointsApiExplorer()
-                .AddSwaggerGen(c => {
-                    c.EnableAnnotations();
-                    c.DocumentFilter<PrefixSwaggerDocumentFilter>();
-                })
-                .AddSingleton<IConnectionMultiplexer>((_) => ConnectionMultiplexer.Connect("localhost:6379, defaultDatabase=0"))
-                .AddScoped<IAdminConfig, AdminConfig>()
-                //.AddConfigStream(builder => builder.ConfigureConfigStreamBuilder())
+                .AddSingleton<IConnectionMultiplexer>((provider) => ConnectionMultiplexer.Connect(connectionString))
+                .AddScoped<IAdminConfig, AdminConfig>()                
                 .AddScoped((serviceProvider) =>
                 {
                     IConnectionMultiplexer connection = serviceProvider.GetRequiredService<IConnectionMultiplexer>();
                     return connection.GetDatabase();
                 });
-        }
-
-        private static IConfigStreamBuilder ConfigureConfigStreamBuilder(this IConfigStreamBuilder builder)
-        {
-            return builder
-                .SetEnvironmentNameResolver(serviceProvider =>
-                {
-                    IWebHostEnvironment webHostEnvironment = serviceProvider.GetRequiredService<IWebHostEnvironment>();
-                    return webHostEnvironment.EnvironmentName;
-                })
-                .SetEnvironmentReadPipeline(pipeline =>
-                    pipeline.Use<EnvironmentReadRedisHandler>())
-                .SetScopeReadPipeline(pipeline =>
-                    pipeline
-                        .UseScopeReadLocalHandler()
-                        .Use<ScopeReadRedisHandler>()
-                        .Use<EnvironmentReadRedisHandler>())
-                .SetScopeWritePipeline(pipeline =>
-                    pipeline
-                        .Use<ScopeWriteRedisHandler>()
-                        .UseScopeWriteLocalHandler());            
         }
     }
 }
